@@ -213,6 +213,11 @@ header .raccourci{
 .appel.urgence{background:var(--alert); border-color:var(--alert); color:#fff}
 .appel.urgence .qui span{color:rgba(255,255,255,.85)}
 .appel.urgence .num{font-size:26px}
+/* dans le bandeau rouge, les cartes d'appel sont blanches : on repose les
+   couleurs explicitement, sinon elles héritent du blanc du bandeau. */
+.alarme .appel{background:#fff; border-color:#fff; color:#12161C; margin-bottom:10px}
+.alarme .appel .qui b{color:#12161C}
+.alarme .appel .num{color:#B3261E; font-size:21px}
 
 footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px}
 footer p{margin:0 0 7px}
