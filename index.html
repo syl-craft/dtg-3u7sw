@@ -322,7 +322,8 @@ var CONFIG = {
     {
       id:'position', nom:'Changement de position', sousTitre:'Installation de la jambe',
       intervalleH:2, avecAlerte:false,
-      titreDu:'Position à changer', titreOk:'Position changée',
+      nuit:{ de:22, a:7 },   // pas de changement entre 22 h et 7 h : on laisse dormir
+      titreDu:'Position à changer', titreOk:'Position changée', titreNuit:'Position — pause de nuit',
       action:'Changer la position', valide:'C’est fait',
       intro:'L’installation à respecter',
       rappel:'Jambe surélevée au-dessus du cœur · talon dans le vide · cale sous le mollet',
@@ -435,19 +436,40 @@ function planning(etats, t, parMed){
   return slots.sort(function(a, b){ return a.ts - b.ts; });
 }
 
+/* Fenêtre de nuit, qui peut enjamber minuit (22 h → 7 h). */
+function estNuit(t, de, a){
+  var h = new Date(t).getHours();
+  return de > a ? (h >= de || h < a) : (h >= de && h < a);
+}
+
+/* Prochaine occurrence de cette heure, aujourd'hui si elle est à venir. */
+function prochaineHeure(t, heure){
+  var d = new Date(t);
+  if (d.getHours() >= heure) d.setDate(d.getDate() + 1);
+  d.setHours(heure, 0, 0, 0);
+  return d.getTime();
+}
+
 /* État d'une surveillance récurrente (plâtre, position). Tant que rien n'a
    été enregistré, elle est due. Les enregistrements sans champ `quoi`
-   datent d'avant l'ajout de la position et concernent le plâtre. */
+   datent d'avant l'ajout de la position et concernent le plâtre.
+   Une surveillance dotée d'une fenêtre `nuit` se met en pause dedans :
+   on ne réveille pas Néo pour le changer de position. */
 function etatSurveillance(sv, releves, t){
   var list = releves.filter(function(c){ return (c.quoi || 'platre') === sv.id; })
                     .sort(function(a, b){ return b.ts - a.ts; });
   var dernier = list[0] || null;
   var prochain = dernier ? dernier.ts + sv.intervalleH * H : t;
+
+  var nuit = !!(sv.nuit && estNuit(t, sv.nuit.de, sv.nuit.a));
+  if (nuit) prochain = Math.max(prochain, prochaineHeure(t, sv.nuit.a));
+
   return {
     sv: sv,
     dernier: dernier,
     prochain: prochain,
-    du: !dernier || t >= prochain,
+    du: !nuit && (!dernier || t >= prochain),
+    nuit: nuit,
     anomalie: !!(dernier && dernier.ok === false),
     restant: Math.max(0, prochain - t),
     nb24: list.filter(function(c){ return c.ts > t - J; }).length
@@ -778,14 +800,21 @@ function renduSurveillance(etatsSv, t){
     var p = el('div', 'pause');
     p.dataset.sujet = sv.id;
     var haut = el('div', 'haut');
-    haut.appendChild(el('span', 'nom', sv.titreOk));
+    haut.appendChild(el('span', 'nom', es.nuit ? sv.titreNuit : sv.titreOk));
     var reste = el('span', 'reste', duree(es.restant));
     reste.dataset.cible = String(es.prochain);
     reste.dataset.format = 'duree';
     haut.appendChild(reste);
     p.appendChild(haut);
-    p.appendChild(el('p', 'quand', 'À ' + hhmm(es.dernier.ts)
-      + ' — prochain à ' + hhmm(es.prochain) + ' · ' + es.nb24 + ' en 24 h'));
+
+    if (es.nuit){
+      p.appendChild(el('p', 'quand', 'Rien à faire avant ' + hhmm(es.prochain)
+        + ' : on ne réveille pas Néo pour le changer de position.'
+        + (es.dernier ? ' Dernier changement à ' + hhmm(es.dernier.ts) + '.' : '')));
+    } else {
+      p.appendChild(el('p', 'quand', 'À ' + hhmm(es.dernier.ts)
+        + ' — prochain à ' + hhmm(es.prochain) + ' · ' + es.nb24 + ' en 24 h'));
+    }
     if (sv.rappel) p.appendChild(el('p', 'rappel', sv.rappel));
     p.appendChild(bouton('lien', sv.action + ' maintenant', function(){
       fermeUi(); ui.surv = sv.id; rendu(true);
@@ -1101,7 +1130,7 @@ function rendu(force){
 
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
-    etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24]; }),
+    etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24, es.nuit]; }),
     tout.map(function(e){ return cle(e) + ':' + e.ts; }).sort(),
     [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode, ui.erreur, ui.form.sujet]
   ]);
