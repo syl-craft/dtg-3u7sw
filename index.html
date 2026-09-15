@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Médicaments de Néo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFF2; --card:#FFFFFF; --ink:#12161C; --muted:#5A6472; --line:#D3D8DF;
+  --para:#0E5C63; --para-pale:#E2EDEE;
+  --ibu:#7A2E5C; --ibu-pale:#F2E5EC;
+  --alert:#B3261E; --alert-pale:#FBE9E7;
+  --pad:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0F1317; --card:#171C22; --ink:#E8EBEF; --muted:#98A2B0; --line:#2B333C;
+    --para:#3FA3AC; --para-pale:#12262A;
+    --ibu:#C87BA4; --ibu-pale:#2A1723;
+    --alert:#F2827A; --alert-pale:#2C1613;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:Archivo,'Segoe UI',system-ui,sans-serif;
+  font-size:16px; line-height:1.45;
+  font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.wrap{max-width:560px; margin:0 auto; padding:0 var(--pad) 48px}
+
+header{padding:20px 0 14px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
+header h1{margin:0; font-size:26px; font-weight:800; letter-spacing:-.02em}
+header .poids{color:var(--muted); font-weight:500; font-size:15px}
+
+#bandeau{
+  display:none; margin:0 0 14px; padding:12px 14px; border-radius:4px;
+  background:var(--alert-pale); color:var(--alert); border-left:5px solid var(--alert);
+  font-weight:600; font-size:15px;
+}
+#bandeau.on{display:block}
+#bandeau button{
+  display:block; margin-top:8px; font:inherit; font-weight:600; cursor:pointer;
+  background:var(--alert); color:#fff; border:0; border-radius:3px; padding:10px 14px; min-height:44px;
+}
+
+.med{
+  margin:0 0 18px; border-radius:6px; overflow:hidden;
+  background:var(--card); border:1px solid var(--line);
+}
+.med.dispo{border:0}
+.med[data-id=paracetamol].dispo{background:var(--para); color:#fff}
+.med[data-id=ibuprofene].dispo{background:var(--ibu); color:#fff}
+.med[data-id=paracetamol].attente{background:var(--para-pale); border:0; border-left:7px solid var(--para)}
+.med[data-id=ibuprofene].attente{background:var(--ibu-pale); border:0; border-left:7px solid var(--ibu)}
+.med.fini{opacity:.62}
+
+.med .corps{padding:18px 18px 4px}
+.med h2{margin:0; font-size:23px; font-weight:800; letter-spacing:-.015em}
+.med .dose{margin:2px 0 0; font-size:17px; font-weight:600}
+.med .detail{margin:1px 0 0; font-size:14px; opacity:.72}
+
+.etat{margin:16px 0 0}
+.etat .titre{font-size:27px; font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:0}
+.med.attente .etat .titre{font-size:40px}
+.med[data-id=paracetamol].attente .etat .titre{color:var(--para)}
+.med[data-id=ibuprofene].attente .etat .titre{color:var(--ibu)}
+.etat .ligne{margin:5px 0 0; font-size:15px; opacity:.82}
+.etat .quota{margin:5px 0 0; font-size:14px; opacity:.68}
+
+.med .pied{padding:14px 18px 18px}
+.bouton{
+  display:block; width:100%; min-height:66px; font:inherit; font-size:18px; font-weight:800;
+  letter-spacing:-.01em; border:0; border-radius:5px; cursor:pointer; padding:14px 16px;
+  background:var(--ink); color:var(--paper);
+}
+.med.dispo .bouton{background:#fff}
+.med[data-id=paracetamol].dispo .bouton{color:var(--para)}
+.med[data-id=ibuprofene].dispo .bouton{color:var(--ibu)}
+.bouton:active{transform:translateY(1px)}
+.bouton[disabled]{opacity:.55; cursor:default}
+
+.lien{
+  display:inline-block; margin-top:4px; background:none; border:0; padding:8px 0;
+  font:inherit; font-size:15px; font-weight:600; color:inherit; opacity:.7;
+  text-decoration:underline; text-underline-offset:3px; cursor:pointer;
+}
+.confirm{margin-top:4px; padding:13px 14px; border-radius:4px; background:var(--alert-pale); border-left:5px solid var(--alert)}
+.confirm p{margin:0 0 10px; font-size:14px; color:var(--alert); font-weight:600}
+.confirm .row{display:flex; gap:10px; flex-wrap:wrap}
+.confirm button{font:inherit; font-weight:700; font-size:15px; border:0; border-radius:4px; padding:12px 16px; min-height:48px; cursor:pointer}
+.confirm .oui{background:var(--alert); color:#fff}
+.confirm .non{background:transparent; color:var(--ink); border:1px solid var(--line)}
+
+h3{margin:32px 0 10px; font-size:14px; font-weight:800; letter-spacing:.02em; color:var(--muted)}
+.jour{margin:18px 0 6px; font-size:14px; font-weight:700; color:var(--muted)}
+.jour:first-of-type{margin-top:0}
+.prise{display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line)}
+.prise .h{font-weight:700; font-size:16px; min-width:56px}
+.prise .pastille{width:11px; height:11px; border-radius:50%; flex:none}
+.prise .pastille.paracetamol{background:var(--para)}
+.prise .pastille.ibuprofene{background:var(--ibu)}
+.prise .nom{flex:1; font-size:16px}
+.prise .tag{font-size:12px; font-weight:700; color:var(--alert); border:1px solid var(--alert); border-radius:3px; padding:2px 6px}
+.prise .tag.enattente{color:var(--muted); border-color:var(--line)}
+.prise .annuler{font:inherit; font-size:14px; font-weight:600; background:none; border:0; color:var(--muted); text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:6px}
+.vide{color:var(--muted); font-size:15px; padding:8px 0}
+
+footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px}
+footer p{margin:0 0 7px}
+footer a{color:inherit}
+footer strong{color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+:focus-visible{outline:3px solid currentColor; outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Médicaments de Néo</h1>
+    <span class="poids">19 kg</span>
+  </header>
+
+  <div id="bandeau" role="alert"></div>
+  <div id="meds"></div>
+
+  <h3>Historique</h3>
+  <div id="histo"></div>
+
+  <footer>
+    <p>Les deux comptes à rebours sont indépendants. Aucun délai n'est imposé entre les deux médicaments&nbsp;: ils peuvent être donnés ensemble pour renforcer l'effet antalgique. L'ibuprofène se donne <strong>avec quelque chose à manger</strong>.</p>
+    <p>Délais de 6&nbsp;h et 8&nbsp;h confirmés par le service de chirurgie pédiatrique le 15/09/2026. Ordonnance du Dr Wassom du 14/09/2026, Hôpital NOVO Pontoise. Doses calculées sur le poids réel de 19&nbsp;kg.</p>
+    <p>En cas de doute, appeler le service de soins&nbsp;: <a href="tel:+33130754780">01 30 75 47 80</a>. Urgence&nbsp;: <a href="tel:15">15</a>.</p>
+  </footer>
+</div>
+
+<script>
+/* =======================================================================
+   Réglages — tout ce qui peut changer sur avis médical est ici.
+   Délais 6 h / 8 h et indépendance des deux molécules confirmés par le
+   service de chirurgie pédiatrique de l'hôpital NOVO le 15/09/2026.
+   ======================================================================= */
+var CONFIG = {
+  debut: '2026-09-14',   // premier jour du traitement
+  ecartCroiseH: 0,       // délai imposé ENTRE les deux molécules (0 = aucun)
+  meds: [
+    { id:'paracetamol', nom:'Paracétamol',
+      dose:'285 mg — 1 dose-poids 19 kg', detail:'12 mL de suspension 2,4 % (24 mg/mL)',
+      intervalleH:6, max24:4, jours:7 },
+    { id:'ibuprofene', nom:'Ibuprofène',
+      dose:'190 mg — 1 dose-poids 19 kg', detail:'9,5 mL de suspension 2 % (20 mg/mL)',
+      intervalleH:8, max24:3, jours:5 }
+  ]
+};
+
+/* ---- LOGIQUE PURE (début) ---- */
+var H = 3600000, J = 86400000;
+
+function pad(n){ return String(n).padStart(2, '0'); }
+
+function duree(ms){
+  var m = Math.ceil(ms / 60000);
+  if (m <= 0) return 'maintenant';
+  if (m < 60) return m + ' min';
+  var h = Math.floor(m / 60), r = m % 60;
+  return r ? h + ' h ' + pad(r) : h + ' h';
+}
+
+function finTraitement(debutMs, jours){ return debutMs + jours * J; }
+function jourTraitement(t, debutMs){ return Math.floor((t - debutMs) / J) + 1; }
+
+/* État complet d'un médicament à l'instant t.
+   Deux contraintes cumulatives : l'intervalle depuis la dernière prise, et le
+   quota de prises sur 24 h glissantes. La plus tardive des deux l'emporte. */
+function etatMed(med, prises, t, debutMs, ecartCroiseH){
+  var interval = med.intervalleH * H;
+  var fin = finTraitement(debutMs, med.jours);
+  var termine = t >= fin;
+
+  var list = prises.filter(function(p){ return p.med === med.id; })
+                   .sort(function(a, b){ return b.ts - a.ts; });
+  var derniere = list[0] || null;
+  var parIntervalle = derniere ? derniere.ts + interval : 0;
+
+  var recentes = list.filter(function(p){ return p.ts > t - J; });
+  var nb24 = recentes.length;
+  var parQuota = nb24 >= med.max24 ? recentes[med.max24 - 1].ts + J : 0;
+
+  var parCroise = 0;
+  if (ecartCroiseH > 0){
+    var autres = prises.filter(function(p){ return p.med !== med.id; })
+                       .sort(function(a, b){ return b.ts - a.ts; });
+    if (autres[0]) parCroise = autres[0].ts + ecartCroiseH * H;
+  }
+
+  var dispoA = Math.max(parIntervalle, parQuota, parCroise);
+  var dispo = !termine && t >= dispoA;
+
+  var cause = 'intervalle';
+  if (parQuota > 0 && parQuota === dispoA) cause = 'quota';
+  else if (parCroise > 0 && parCroise === dispoA) cause = 'croise';
+
+  /* Projection ancrée sur l'heure de disponibilité, ou sur MAINTENANT si le
+     délai est déjà écoulé — sinon on proposerait des horaires déjà passés. */
+  var ancre = dispo ? t : dispoA;
+  var suivantes = [];
+  if (!termine){
+    for (var i = 1; i <= 2; i++){
+      var ts = ancre + i * interval;
+      if (ts < fin) suivantes.push(ts);
+    }
+  }
+
+  return { med: med, derniere: derniere, dispo: dispo, dispoA: dispoA, cause: cause,
+           nb24: nb24, termine: termine, fin: fin, ancre: ancre, suivantes: suivantes,
+           restant: Math.max(0, dispoA - t) };
+}
+/* ---- LOGIQUE PURE (fin) ---- */
+
+/* =======================================================================
+   Horloge — aucune confiance accordée à l'horloge de l'appareil.
+   ======================================================================= */
+var BASE = 'https://nvr-b17dj-default-rtdb.europe-west1.firebasedatabase.app/dtg-3u7sw';
+var offset = Number(localStorage.getItem('offsetHorloge') || 0);
+function now(){ return Date.now() + offset; }
+
+async function caleHorloge(){
+  try{
+    var res = await fetch(BASE + '/_clock.json', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ '.sv': 'timestamp' })
+    });
+    var v = await res.json();
+    if (typeof v !== 'number'){
+      v = await (await fetch(BASE + '/_clock.json')).json();
+    }
+    if (typeof v === 'number' && v > 0){
+      offset = v - Date.now();
+      localStorage.setItem('offsetHorloge', String(offset));
+    }
+  }catch(e){ /* hors ligne : on garde l'offset mémorisé */ }
+}
+
+/* =======================================================================
+   Données
+   ======================================================================= */
+var DEBUT = new Date(CONFIG.debut + 'T00:00:00').getTime();
+var distant = {};
+var attente = JSON.parse(localStorage.getItem('attente') || '[]');
+var confirmOuvert = {};
+var derniereSignature = '';
+
+function sauveAttente(){ localStorage.setItem('attente', JSON.stringify(attente)); }
+
+function toutesLesPrises(){
+  var cids = {};
+  Object.keys(distant).forEach(function(k){
+    if (distant[k] && distant[k].cid) cids[distant[k].cid] = 1;
+  });
+  var confirmees = Object.keys(distant).map(function(id){
+    return Object.assign({ id: id }, distant[id]);
+  });
+  var enVol = attente.filter(function(p){ return !cids[p.cid]; })
+                     .map(function(p){ return Object.assign({ enAttente: true }, p); });
+  return confirmees.concat(enVol).filter(function(p){
+    return p && p.med && typeof p.ts === 'number';
+  });
+}
+
+/* =======================================================================
+   Écriture — la prise part d'abord en file locale, donc un clic n'est
+   jamais perdu même sans réseau.
+   ======================================================================= */
+function enregistre(medId, horsProtocole){
+  attente.push({
+    cid: 'c' + now() + Math.random().toString(36).slice(2, 8),
+    med: medId, ts: now(), hp: !!horsProtocole
+  });
+  sauveAttente();
+  rendu(true);
+  videFile();
+}
+
+async function videFile(){
+  if (!attente.length) return;
+  var restantes = [];
+  for (var i = 0; i < attente.length; i++){
+    var p = attente[i];
+    try{
+      var res = await fetch(BASE + '/prises.json', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ med: p.med, ts: p.ts, hp: p.hp, cid: p.cid })
+      });
+      if (!res.ok) throw new Error(res.status);
+      var d = await res.json();
+      if (d && d.name) distant[d.name] = { med: p.med, ts: p.ts, hp: p.hp, cid: p.cid };
+    }catch(e){ restantes.push(p); }
+  }
+  attente = restantes;
+  sauveAttente();
+  majBandeau();
+  rendu(true);
+}
+
+async function annule(cle, enAttente){
+  if (enAttente){
+    attente = attente.filter(function(p){ return p.cid !== cle; });
+    sauveAttente(); majBandeau(); rendu(true);
+    return;
+  }
+  var sauvegarde = distant[cle];
+  delete distant[cle];
+  rendu(true);
+  try{
+    var res = await fetch(BASE + '/prises/' + cle + '.json', { method: 'DELETE' });
+    if (!res.ok) throw new Error(res.status);
+  }catch(e){
+    distant[cle] = sauvegarde;
+    rendu(true);
+    alerte("L'annulation n'est pas passée. Vérifiez le réseau et réessayez.", true);
+  }
+}
+
+/* =======================================================================
+   Temps réel
+   ======================================================================= */
+function ecoute(){
+  try{
+    var es = new EventSource(BASE + '/prises.json');
+    var applique = function(e){
+      try{
+        var msg = JSON.parse(e.data);
+        if (msg.path === '/'){
+          distant = msg.data || {};
+        } else {
+          var cle = msg.path.slice(1).split('/')[0];
+          if (msg.data === null) delete distant[cle];
+          else distant[cle] = msg.data;
+        }
+        majBandeau(); rendu(true);
+      }catch(err){ /* message non exploitable : on ignore */ }
+    };
+    es.addEventListener('put', applique);
+    es.addEventListener('patch', applique);
+  }catch(e){
+    setInterval(recharge, 10000);
+  }
+}
+
+async function recharge(){
+  try{
+    var d = await (await fetch(BASE + '/prises.json')).json();
+    distant = d || {};
+    majBandeau(); rendu(true);
+  }catch(e){ majBandeau(); }
+}
+
+/* =======================================================================
+   Affichage
+   ======================================================================= */
+function hhmm(ts){ var d = new Date(ts); return d.getHours() + 'h' + pad(d.getMinutes()); }
+
+function dateCourte(ts){
+  var d = new Date(ts);
+  return pad(d.getDate()) + '/' + pad(d.getMonth() + 1);
+}
+
+function ajoute(parent, cls, texte){
+  var p = document.createElement('p');
+  p.className = cls; p.textContent = texte; parent.appendChild(p); return p;
+}
+
+function alerte(msg, avecReessai){
+  var b = document.getElementById('bandeau');
+  b.textContent = msg;
+  if (avecReessai){
+    var btn = document.createElement('button');
+    btn.textContent = 'Réessayer maintenant';
+    btn.onclick = function(){ videFile(); recharge(); };
+    b.appendChild(btn);
+  }
+  b.classList.add('on');
+}
+
+function majBandeau(){
+  var b = document.getElementById('bandeau');
+  if (attente.length){
+    var n = attente.length;
+    alerte(n > 1
+      ? n + ' prises ne sont pas encore enregistrées — pas de réseau. L’envoi reprendra tout seul.'
+      : 'Une prise n’est pas encore enregistrée — pas de réseau. L’envoi reprendra tout seul.',
+      true);
+  } else if (!navigator.onLine){
+    alerte('Pas de réseau. L’écran peut ne pas être à jour.', true);
+  } else {
+    b.classList.remove('on');
+    b.textContent = '';
+  }
+}
+
+function blocMed(e){
+  var m = e.med;
+  var sec = document.createElement('section');
+  sec.className = 'med ' + (e.termine ? 'fini' : e.dispo ? 'dispo' : 'attente');
+  sec.dataset.id = m.id;
+
+  var corps = document.createElement('div');
+  corps.className = 'corps';
+  corps.innerHTML = '<h2></h2><p class="dose"></p><p class="detail"></p><div class="etat"><p class="titre"></p></div>';
+  corps.querySelector('h2').textContent = m.nom;
+  corps.querySelector('.dose').textContent = m.dose;
+
+  var jour = Math.min(Math.max(jourTraitement(now(), DEBUT), 1), m.jours);
+  corps.querySelector('.detail').textContent = m.detail + ' — jour ' + jour + ' sur ' + m.jours;
+
+  var etat = corps.querySelector('.etat');
+  var titre = etat.querySelector('.titre');
+
+  if (e.termine){
+    titre.textContent = 'Traitement terminé';
+    ajoute(etat, 'ligne', 'Dernier jour prévu : ' + dateCourte(e.fin - J) + '.');
+  } else if (e.dispo){
+    titre.textContent = 'À donner maintenant';
+    if (e.suivantes.length){
+      ajoute(etat, 'ligne', 'Si donnée maintenant (' + hhmm(e.ancre) + '), les suivantes tombent à '
+        + e.suivantes.map(hhmm).join(' et ') + '.');
+    }
+    ajoute(etat, 'quota', e.derniere
+      ? 'Dernière prise à ' + hhmm(e.derniere.ts) + ', il y a ' + duree(now() - e.derniere.ts)
+        + ' — ' + e.nb24 + ' sur ' + m.max24 + ' prises en 24 h.'
+      : 'Aucune prise enregistrée pour l’instant.');
+  } else {
+    titre.textContent = duree(e.restant);
+    titre.dataset.compte = '1';
+    var raison;
+    if (e.cause === 'quota'){
+      raison = 'Maximum de ' + m.max24 + ' prises sur 24 h atteint. Possible à ' + hhmm(e.dispoA);
+    } else if (e.cause === 'croise'){
+      raison = 'Écart à respecter avec l’autre médicament. Possible à ' + hhmm(e.dispoA);
+    } else {
+      raison = 'Possible à ' + hhmm(e.dispoA);
+    }
+    ajoute(etat, 'ligne', raison
+      + (e.suivantes.length ? ', puis ' + e.suivantes.map(hhmm).join(' et ') + '.' : '.'));
+    ajoute(etat, 'quota', 'Dernière prise à ' + hhmm(e.derniere.ts)
+      + ' — ' + e.nb24 + ' sur ' + m.max24 + ' prises en 24 h.');
+  }
+
+  var pied = document.createElement('div');
+  pied.className = 'pied';
+
+  if (!e.termine && e.dispo){
+    var b = document.createElement('button');
+    b.className = 'bouton';
+    b.textContent = 'J’ai donné le ' + m.nom.toLowerCase();
+    b.onclick = function(){ b.disabled = true; enregistre(m.id, false); };
+    pied.appendChild(b);
+  } else if (!e.termine){
+    if (confirmOuvert[m.id]){
+      var box = document.createElement('div');
+      box.className = 'confirm';
+      box.innerHTML = '<p></p><div class="row"><button class="oui"></button><button class="non">Annuler</button></div>';
+      box.querySelector('p').textContent =
+        'Il reste ' + duree(e.restant) + ' avant la prochaine dose prévue. Enregistrer quand même ?';
+      var oui = box.querySelector('.oui');
+      oui.textContent = 'Oui, la dose a été donnée';
+      oui.onclick = function(){ confirmOuvert[m.id] = false; enregistre(m.id, true); };
+      box.querySelector('.non').onclick = function(){ confirmOuvert[m.id] = false; rendu(true); };
+      pied.appendChild(box);
+    } else {
+      var l = document.createElement('button');
+      l.className = 'lien';
+      l.textContent = 'La dose a été donnée quand même';
+      l.onclick = function(){ confirmOuvert[m.id] = true; rendu(true); };
+      pied.appendChild(l);
+    }
+  }
+
+  sec.appendChild(corps);
+  sec.appendChild(pied);
+  return sec;
+}
+
+function libelleJour(ts, t){
+  var a = new Date(ts); a.setHours(0, 0, 0, 0);
+  var b = new Date(t);  b.setHours(0, 0, 0, 0);
+  var ecart = Math.round((b - a) / J);
+  if (ecart === 0) return 'Aujourd’hui';
+  if (ecart === 1) return 'Hier';
+  return new Date(ts).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function renduHistorique(prises, t){
+  var box = document.getElementById('histo');
+  box.textContent = '';
+  if (!prises.length){
+    ajoute(box, 'vide', 'Aucune prise enregistrée. La première apparaîtra ici.');
+    return;
+  }
+  var tri = prises.slice().sort(function(a, b){ return b.ts - a.ts; });
+  var jourCourant = null;
+
+  tri.forEach(function(p, index){
+    var lib = libelleJour(p.ts, t);
+    if (lib !== jourCourant){
+      jourCourant = lib;
+      var h = document.createElement('p');
+      h.className = 'jour'; h.textContent = lib; box.appendChild(h);
+    }
+    var def = CONFIG.meds.filter(function(m){ return m.id === p.med; })[0];
+    var ligne = document.createElement('div');
+    ligne.className = 'prise';
+    ligne.innerHTML = '<span class="h"></span><span class="pastille"></span><span class="nom"></span>';
+    ligne.querySelector('.h').textContent = hhmm(p.ts);
+    ligne.querySelector('.pastille').classList.add(p.med);
+    ligne.querySelector('.nom').textContent = def ? def.nom : p.med;
+
+    if (p.hp){
+      var t1 = document.createElement('span');
+      t1.className = 'tag'; t1.textContent = 'hors protocole'; ligne.appendChild(t1);
+    }
+    if (p.enAttente){
+      var t2 = document.createElement('span');
+      t2.className = 'tag enattente'; t2.textContent = 'envoi en cours'; ligne.appendChild(t2);
+    }
+    if (index === 0 && t - p.ts < 10 * 60000){
+      var a = document.createElement('button');
+      a.className = 'annuler'; a.textContent = 'Annuler';
+      a.onclick = function(){ annule(p.enAttente ? p.cid : p.id, !!p.enAttente); };
+      ligne.appendChild(a);
+    }
+    box.appendChild(ligne);
+  });
+}
+
+/* Reconstruit tout quand les données changent ; sinon ne rafraîchit que les
+   comptes à rebours, pour ne pas voler le focus à chaque seconde. */
+function rendu(force){
+  var t = now();
+  var prises = toutesLesPrises();
+  var etats = CONFIG.meds.map(function(m){
+    return etatMed(m, prises, t, DEBUT, CONFIG.ecartCroiseH);
+  });
+  var signature = JSON.stringify([
+    etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
+    prises.length,
+    CONFIG.meds.map(function(m){ return !!confirmOuvert[m.id]; })
+  ]);
+
+  if (force || signature !== derniereSignature){
+    derniereSignature = signature;
+    var box = document.getElementById('meds');
+    box.textContent = '';
+    etats.forEach(function(e){ box.appendChild(blocMed(e)); });
+    renduHistorique(prises, t);
+  } else {
+    var titres = document.querySelectorAll('.med .titre');
+    etats.forEach(function(e, i){
+      if (e.dispo || e.termine) return;
+      var el = titres[i];
+      if (el && el.dataset.compte) el.textContent = duree(e.restant);
+    });
+  }
+}
+
+/* =======================================================================
+   Démarrage
+   ======================================================================= */
+window.addEventListener('online',  function(){ majBandeau(); videFile(); recharge(); });
+window.addEventListener('offline', majBandeau);
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden){ recharge(); videFile(); }
+});
+
+(async function(){
+  rendu(true);
+  await caleHorloge();
+  await recharge();
+  ecoute();
+  videFile();
+  setInterval(function(){ rendu(false); }, 1000);
+  setInterval(videFile, 10000);
+  rendu(true);
+})();
+</script>
+</body>
+</html>
