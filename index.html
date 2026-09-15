@@ -3,24 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Néo — médicaments et plâtre</title>
+<title>Néo — plâtre et médicaments</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#EDEFF2; --card:#FFFFFF; --ink:#12161C; --muted:#5A6472; --line:#D3D8DF;
-  --para:#0E5C63; --para-pale:#E2EDEE;
-  --ibu:#7A2E5C; --ibu-pale:#F2E5EC;
-  --platre:#3C4A5A; --platre-pale:#E4E8EE;
+  --paracetamol:#0E5C63;
+  --ibuprofene:#7A2E5C;
+  --platre:#3C4A5A;
+  --position:#8A5A14;
   --alert:#B3261E; --alert-pale:#FBE9E7;
 }
 @media (prefers-color-scheme:dark){
   :root{
     --paper:#0F1317; --card:#171C22; --ink:#E8EBEF; --muted:#98A2B0; --line:#2B333C;
-    --para:#3FA3AC; --para-pale:#12262A;
-    --ibu:#C87BA4; --ibu-pale:#2A1723;
-    --platre:#93A4B8; --platre-pale:#1B222B;
+    --paracetamol:#3FA3AC;
+    --ibuprofene:#C87BA4;
+    --platre:#93A4B8;
+    --position:#D2A055;
     --alert:#F2827A; --alert-pale:#2C1613;
   }
 }
@@ -59,36 +61,41 @@ header .raccourci{
   background:var(--alert); color:#fff; border:0; border-radius:3px; padding:10px 14px; min-height:44px;
 }
 
-/* ---- ce qu'on peut donner tout de suite ---- */
+/* ---- bloc « à faire maintenant » ---- */
 .action{margin:0 0 12px; border-radius:6px; padding:18px; color:#fff}
-.action[data-med=paracetamol]{background:var(--para)}
-.action[data-med=ibuprofene]{background:var(--ibu)}
-.action[data-med=platre]{background:var(--platre)}
+.action[data-sujet=paracetamol]{background:var(--paracetamol)}
+.action[data-sujet=ibuprofene]{background:var(--ibuprofene)}
+.action[data-sujet=platre]{background:var(--platre)}
+.action[data-sujet=position]{background:var(--position)}
 .action h3{margin:0; font-size:24px; font-weight:800; letter-spacing:-.02em}
 .action .dose{margin:2px 0 0; font-size:17px; font-weight:600}
-.action .detail{margin:1px 0 14px; font-size:14px; opacity:.75}
+.action .detail{margin:1px 0 14px; font-size:14px; opacity:.78}
 .bouton{
   display:block; width:100%; min-height:68px; font:inherit; font-size:18px; font-weight:800;
   letter-spacing:-.01em; border:0; border-radius:5px; cursor:pointer; padding:14px 16px; background:#fff;
 }
-.action[data-med=paracetamol] .bouton{color:var(--para)}
-.action[data-med=ibuprofene] .bouton{color:var(--ibu)}
-.action[data-med=platre] .bouton{color:var(--platre)}
+.action[data-sujet=paracetamol] .bouton{color:var(--paracetamol)}
+.action[data-sujet=ibuprofene] .bouton{color:var(--ibuprofene)}
+.action[data-sujet=platre] .bouton{color:var(--platre)}
+.action[data-sujet=position] .bouton{color:var(--position)}
 .bouton:active{transform:translateY(1px)}
 .bouton[disabled]{opacity:.55; cursor:default}
 
-/* ---- ce qu'il faut attendre ---- */
+/* ---- bloc « en attente » ---- */
 .pause{margin:0 0 12px; border-radius:6px; padding:15px 16px; background:var(--card); border:1px solid var(--line)}
-.pause[data-med=paracetamol]{border-left:7px solid var(--para)}
-.pause[data-med=ibuprofene]{border-left:7px solid var(--ibu)}
-.pause[data-med=platre]{border-left:7px solid var(--platre)}
+.pause[data-sujet=paracetamol]{border-left:7px solid var(--paracetamol)}
+.pause[data-sujet=ibuprofene]{border-left:7px solid var(--ibuprofene)}
+.pause[data-sujet=platre]{border-left:7px solid var(--platre)}
+.pause[data-sujet=position]{border-left:7px solid var(--position)}
 .pause .haut{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
 .pause .nom{font-size:19px; font-weight:800; letter-spacing:-.015em}
-.pause[data-med=paracetamol] .nom,.pause[data-med=paracetamol] .reste{color:var(--para)}
-.pause[data-med=ibuprofene] .nom,.pause[data-med=ibuprofene] .reste{color:var(--ibu)}
-.pause[data-med=platre] .nom,.pause[data-med=platre] .reste{color:var(--platre)}
+.pause[data-sujet=paracetamol] .nom,.pause[data-sujet=paracetamol] .reste{color:var(--paracetamol)}
+.pause[data-sujet=ibuprofene] .nom,.pause[data-sujet=ibuprofene] .reste{color:var(--ibuprofene)}
+.pause[data-sujet=platre] .nom,.pause[data-sujet=platre] .reste{color:var(--platre)}
+.pause[data-sujet=position] .nom,.pause[data-sujet=position] .reste{color:var(--position)}
 .pause .reste{font-size:26px; font-weight:800; letter-spacing:-.02em; white-space:nowrap}
 .pause .quand{margin:2px 0 0; font-size:14.5px; color:var(--muted)}
+.pause .rappel{margin:8px 0 0; font-size:14.5px; font-weight:600}
 .rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
 
 .lien{
@@ -103,27 +110,24 @@ header .raccourci{
 .confirm .oui{background:var(--alert); color:#fff}
 .confirm .non{background:transparent; color:var(--ink); border:1px solid var(--line)}
 
-/* ---- contrôle du plâtre ---- */
-.alarme{
-  margin:0 0 12px; border-radius:6px; padding:16px;
-  background:var(--alert); color:#fff;
-}
-.alarme h3{margin:0 0 4px; font-size:21px; font-weight:800; letter-spacing:-.02em}
-.alarme p{margin:0 0 12px; font-size:15px}
+/* ---- surveillance ---- */
+.alarme{margin:0 0 12px; border-radius:6px; padding:16px; background:var(--alert); color:#fff}
+.alarme h3{margin:0 0 6px; font-size:21px; font-weight:800; letter-spacing:-.02em}
+.alarme p{margin:0 0 10px; font-size:15px}
 .liste{margin:0 0 4px}
 .liste h4{margin:14px 0 6px; font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
 .liste h4:first-child{margin-top:0}
 .liste ul{margin:0; padding:0; list-style:none}
-.liste li{position:relative; padding:7px 0 7px 22px; font-size:15.5px; border-bottom:1px solid var(--line)}
+.liste li{position:relative; padding:8px 0 8px 22px; font-size:15.5px; border-bottom:1px solid var(--line)}
 .liste li:last-child{border-bottom:0}
-.liste li::before{
-  content:''; position:absolute; left:2px; top:15px; width:8px; height:8px;
-  border-radius:50%; background:var(--platre);
-}
+.liste li::before{content:''; position:absolute; left:2px; top:16px; width:8px; height:8px; border-radius:50%; background:var(--muted)}
+.panneau[data-sujet=platre] .liste li::before{background:var(--platre)}
+.panneau[data-sujet=position] .liste li::before{background:var(--position)}
 .liste li b{font-weight:700}
-.duo{display:flex; flex-direction:column; gap:10px; margin-top:14px}
+.duo{display:flex; flex-direction:column; gap:10px; margin-top:16px}
 .duo .bouton{min-height:62px; font-size:17px}
-.duo .bouton.ok{background:var(--platre); color:#fff}
+.panneau[data-sujet=platre] .duo .bouton.ok{background:var(--platre); color:#fff}
+.panneau[data-sujet=position] .duo .bouton.ok{background:var(--position); color:#fff}
 .duo .bouton.nok{background:transparent; color:var(--alert); border:2px solid var(--alert); min-height:56px; font-size:16px}
 
 /* ---- planning chronologique ---- */
@@ -135,12 +139,12 @@ header .raccourci{
   content:''; position:absolute; left:-28px; top:19px; width:16px; height:16px;
   border-radius:50%; background:var(--paper); border:4px solid var(--line);
 }
-.etape[data-med=paracetamol]::before{border-color:var(--para)}
-.etape[data-med=ibuprofene]::before{border-color:var(--ibu)}
+.etape[data-sujet=paracetamol]::before{border-color:var(--paracetamol)}
+.etape[data-sujet=ibuprofene]::before{border-color:var(--ibuprofene)}
 .etape.hypo::before{border-style:dotted}
 .etape .heure{font-size:23px; font-weight:800; letter-spacing:-.025em; min-width:78px}
-.etape[data-med=paracetamol] .heure{color:var(--para)}
-.etape[data-med=ibuprofene] .heure{color:var(--ibu)}
+.etape[data-sujet=paracetamol] .heure{color:var(--paracetamol)}
+.etape[data-sujet=ibuprofene] .heure{color:var(--ibuprofene)}
 .etape .quoi{flex:1; font-size:16px; font-weight:600}
 .etape .relatif{font-size:14px; color:var(--muted); white-space:nowrap}
 .etape.hypo{opacity:.68}
@@ -153,9 +157,10 @@ header .raccourci{
 .prise.ouverte{border-bottom:0}
 .prise .h{font-weight:700; font-size:16px; min-width:56px}
 .prise .pastille{width:11px; height:11px; border-radius:50%; flex:none}
-.prise .pastille.paracetamol{background:var(--para)}
-.prise .pastille.ibuprofene{background:var(--ibu)}
-.prise .pastille.controle{background:var(--platre); border-radius:2px}
+.prise .pastille.paracetamol{background:var(--paracetamol)}
+.prise .pastille.ibuprofene{background:var(--ibuprofene)}
+.prise .pastille.platre{background:var(--platre); border-radius:2px}
+.prise .pastille.position{background:var(--position); border-radius:2px}
 .prise .pastille.anomalie{background:var(--alert); border-radius:2px}
 .prise .nomp{flex:1; font-size:16px}
 .prise .tag{font-size:12px; font-weight:700; color:var(--alert); border:1px solid var(--alert); border-radius:3px; padding:2px 6px}
@@ -166,14 +171,15 @@ header .raccourci{
 }
 .vide{color:var(--muted); font-size:15px; padding:4px 0}
 
-/* ---- panneaux d'édition ---- */
+/* ---- panneaux ---- */
 .panneau{
   margin:0 0 12px; padding:14px; border-radius:5px;
   background:var(--card); border:1px solid var(--line); border-left:5px solid var(--muted);
 }
-.panneau[data-med=paracetamol]{border-left-color:var(--para)}
-.panneau[data-med=ibuprofene]{border-left-color:var(--ibu)}
-.panneau[data-med=controle]{border-left-color:var(--platre)}
+.panneau[data-sujet=paracetamol]{border-left-color:var(--paracetamol)}
+.panneau[data-sujet=ibuprofene]{border-left-color:var(--ibuprofene)}
+.panneau[data-sujet=platre]{border-left-color:var(--platre)}
+.panneau[data-sujet=position]{border-left-color:var(--position)}
 .panneau .quoi{margin:0 0 11px; font-size:14px; font-weight:700; color:var(--muted)}
 .champs{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
 .panneau select,.panneau input[type=time]{
@@ -187,14 +193,15 @@ header .raccourci{
 }
 .btn.secondaire{background:transparent; color:var(--ink); border:1px solid var(--line)}
 .btn.danger{background:var(--alert); color:#fff}
-.choixmed{display:flex; gap:8px; margin:0 0 11px}
+.choixmed{display:flex; gap:8px; margin:0 0 11px; flex-wrap:wrap}
 .choixmed button{
-  flex:1; font:inherit; font-weight:700; font-size:15px; padding:13px 8px; min-height:52px;
+  flex:1 1 40%; font:inherit; font-weight:700; font-size:14.5px; padding:13px 6px; min-height:52px;
   border-radius:4px; border:2px solid var(--line); background:transparent; color:var(--muted); cursor:pointer;
 }
-.choixmed button[data-med=paracetamol].actif{border-color:var(--para); background:var(--para); color:#fff}
-.choixmed button[data-med=ibuprofene].actif{border-color:var(--ibu); background:var(--ibu); color:#fff}
-.choixmed button[data-med=controle].actif{border-color:var(--platre); background:var(--platre); color:#fff}
+.choixmed button[data-sujet=paracetamol].actif{border-color:var(--paracetamol); background:var(--paracetamol); color:#fff}
+.choixmed button[data-sujet=ibuprofene].actif{border-color:var(--ibuprofene); background:var(--ibuprofene); color:#fff}
+.choixmed button[data-sujet=platre].actif{border-color:var(--platre); background:var(--platre); color:#fff}
+.choixmed button[data-sujet=position].actif{border-color:var(--position); background:var(--position); color:#fff}
 .erreur{margin:10px 0 0; font-size:14px; color:var(--alert); font-weight:600}
 .supprimer{margin-top:12px; padding-top:11px; border-top:1px solid var(--line)}
 .ajouter{margin-top:16px}
@@ -213,7 +220,7 @@ header .raccourci{
 .appel.urgence{background:var(--alert); border-color:var(--alert); color:#fff}
 .appel.urgence .qui span{color:rgba(255,255,255,.85)}
 .appel.urgence .num{font-size:26px}
-/* dans le bandeau rouge, les cartes d'appel sont blanches : on repose les
+/* dans le bandeau rouge les cartes d'appel sont blanches : on repose les
    couleurs explicitement, sinon elles héritent du blanc du bandeau. */
 .alarme .appel{background:#fff; border-color:#fff; color:#12161C; margin-bottom:10px}
 .alarme .appel .qui b{color:#12161C}
@@ -240,8 +247,8 @@ footer strong{color:var(--ink)}
 
   <div id="bandeau" role="alert"></div>
 
-  <h2 class="section">Contrôle du plâtre</h2>
-  <div id="platre"></div>
+  <h2 class="section">Surveillance</h2>
+  <div id="surveillance"></div>
 
   <h2 class="section">Médicaments maintenant</h2>
   <div id="maintenant"></div>
@@ -265,8 +272,6 @@ footer strong{color:var(--ink)}
 <script>
 /* =======================================================================
    Réglages — tout ce qui peut changer sur avis médical est ici.
-   Délais 6 h / 8 h et indépendance des deux molécules confirmés par le
-   service de chirurgie pédiatrique de l'hôpital NOVO le 15/09/2026.
    ======================================================================= */
 var CONFIG = {
   debut: '2026-09-15',   // premier jour du traitement (première prise à 11 h)
@@ -283,40 +288,61 @@ var CONFIG = {
       intervalleH:8, max24:3, jours:5 }
   ],
 
-  controle: {
-    intervalleH: 4,
-    groupes: [
-      { titre:'Les orteils', points:[
-        ['Couleur', 'roses, ni pâles, ni blancs, ni bleus'],
-        ['Chaleur', 'tièdes, comme ceux de l’autre pied'],
-        ['Mobilité', 'Néo les bouge tout seul quand on lui demande'],
-        ['Sensibilité', 'il les sent quand on les touche, sans fourmillement ni engourdissement'],
-        ['Gonflement', 'pas plus gonflés que ceux de l’autre pied'],
-        ['Recoloration', 'on appuie sur un ongle jusqu’à ce qu’il blanchisse : il redevient rose en moins de 3 secondes']
-      ]},
-      { titre:'Le plâtre', points:[
-        ['Serrage', 'aucun endroit qui serre, qui appuie ou qui fait mal'],
-        ['État', 'sec, non fissuré, non ramolli'],
-        ['Propreté', 'pas d’odeur inhabituelle ni d’écoulement']
-      ]},
-      { titre:'La douleur', points:[
-        ['Évolution', 'elle diminue ou reste stable — une douleur qui augmente malgré les antalgiques est un signe d’alerte']
-      ]}
-    ],
-    conduite: [
-      'N’attendez pas le prochain contrôle : appelez tout de suite.',
-      'En attendant, surélevez le pied plus haut que le niveau du cœur.',
-      'Ne glissez rien sous le plâtre, ne le coupez pas, ne le mouillez pas.'
-    ]
-  },
+  surveillances: [
+    {
+      id:'platre', nom:'Contrôle du plâtre', sousTitre:'Orteils et plâtre',
+      intervalleH:4, avecAlerte:true,
+      titreDu:'Contrôle à faire', titreOk:'Plâtre vérifié',
+      action:'Faire le contrôle', valide:'Tout est normal',
+      intro:'Ce qu’il faut regarder',
+      groupes:[
+        { titre:'Les orteils', points:[
+          ['Couleur', 'roses, ni pâles, ni blancs, ni bleus'],
+          ['Chaleur', 'tièdes, comme ceux de l’autre pied'],
+          ['Mobilité', 'Néo les bouge tout seul quand on lui demande'],
+          ['Sensibilité', 'il les sent quand on les touche, sans fourmillement ni engourdissement'],
+          ['Gonflement', 'pas plus gonflés que ceux de l’autre pied'],
+          ['Recoloration', 'on appuie sur un ongle jusqu’à ce qu’il blanchisse : il redevient rose en moins de 3 secondes']
+        ]},
+        { titre:'Le plâtre', points:[
+          ['Serrage', 'aucun endroit qui serre, qui appuie ou qui fait mal'],
+          ['État', 'sec, non fissuré, non ramolli'],
+          ['Propreté', 'pas d’odeur inhabituelle ni d’écoulement']
+        ]},
+        { titre:'La douleur', points:[
+          ['Évolution', 'elle diminue ou reste stable — une douleur qui augmente malgré les antalgiques est un signe d’alerte']
+        ]}
+      ],
+      conduite:[
+        'N’attendez pas le prochain contrôle : appelez tout de suite.',
+        'En attendant, surélevez le pied plus haut que le niveau du cœur.',
+        'Ne glissez rien sous le plâtre, ne le coupez pas, ne le mouillez pas.'
+      ]
+    },
+    {
+      id:'position', nom:'Changement de position', sousTitre:'Installation de la jambe',
+      intervalleH:2, avecAlerte:false,
+      titreDu:'Position à changer', titreOk:'Position changée',
+      action:'Changer la position', valide:'C’est fait',
+      intro:'L’installation à respecter',
+      rappel:'Jambe surélevée au-dessus du cœur · talon dans le vide · cale sous le mollet',
+      groupes:[
+        { titre:'À chaque changement', points:[
+          ['Changer de position', 'ne pas laisser Néo dans la même posture plus de 2 h'],
+          ['Jambe surélevée', 'le pied plus haut que le niveau du cœur, pour faire dégonfler'],
+          ['Talon dans le vide', 'aucun appui sous le talon — c’est là que les points de compression se forment'],
+          ['Cale sous le mollet', 'le coussin soutient le mollet, jamais le talon']
+        ]}
+      ]
+    }
+  ],
 
   telephones: [
     { num:'15', tel:'15', qui:'Urgences — SAMU',
       note:'Orteils froids, bleus ou blancs, qui ne bougent plus, douleur intense', urgence:true },
     { num:'01 30 75 47 80', tel:'+33130754780', qui:'Service de chirurgie pédiatrique',
       note:'Plâtre, douleur, doses — le bon numéro dans presque tous les cas' },
-    { num:'01 30 75 48 21', tel:'+33130754821', qui:'Cadre de santé',
-      note:'Mme E. Knoch' },
+    { num:'01 30 75 48 21', tel:'+33130754821', qui:'Cadre de santé', note:'Mme E. Knoch' },
     { num:'01 30 75 50 19', tel:'+33130755019', qui:'Secrétariat' },
     { num:'01 30 75 40 35', tel:'+33130754035', qui:'Consultations et rendez-vous' },
     { num:'01 40 05 48 48', tel:'+33140054848', qui:'Centre antipoison',
@@ -409,13 +435,16 @@ function planning(etats, t, parMed){
   return slots.sort(function(a, b){ return a.ts - b.ts; });
 }
 
-/* État du contrôle du plâtre. Tant qu'aucun contrôle n'a été fait, il est dû.
-   Une anomalie signalée reste affichée jusqu'au contrôle normal suivant. */
-function etatControle(controles, t, intervalleH){
-  var list = controles.slice().sort(function(a, b){ return b.ts - a.ts; });
+/* État d'une surveillance récurrente (plâtre, position). Tant que rien n'a
+   été enregistré, elle est due. Les enregistrements sans champ `quoi`
+   datent d'avant l'ajout de la position et concernent le plâtre. */
+function etatSurveillance(sv, releves, t){
+  var list = releves.filter(function(c){ return (c.quoi || 'platre') === sv.id; })
+                    .sort(function(a, b){ return b.ts - a.ts; });
   var dernier = list[0] || null;
-  var prochain = dernier ? dernier.ts + intervalleH * H : t;
+  var prochain = dernier ? dernier.ts + sv.intervalleH * H : t;
   return {
+    sv: sv,
     dernier: dernier,
     prochain: prochain,
     du: !dernier || t >= prochain,
@@ -451,28 +480,31 @@ async function caleHorloge(){
 }
 
 /* =======================================================================
-   Données — deux nœuds : les prises et les contrôles du plâtre.
+   Données — deux nœuds : les prises et les relevés de surveillance.
    ======================================================================= */
 var DEBUT = new Date(CONFIG.debut + 'T00:00:00').getTime();
 var distant = { prises: {}, controles: {} };
 var attente = JSON.parse(localStorage.getItem('attente') || '[]');
 var derniereSignature = '';
 
-var ui = { ligne: null, mode: null, ajout: false, horsProto: null, platre: null, erreur: '',
-           form: { med: 'paracetamol', jour: 0, heure: '12:00' } };
+var ui = { ligne: null, mode: null, ajout: false, horsProto: null,
+           surv: null, survMode: null, erreur: '',
+           form: { sujet: 'paracetamol', jour: 0, heure: '12:00' } };
 
 function fermeUi(){
   ui.ligne = null; ui.mode = null; ui.ajout = false;
-  ui.horsProto = null; ui.platre = null; ui.erreur = '';
+  ui.horsProto = null; ui.surv = null; ui.survMode = null; ui.erreur = '';
 }
 
 function sauveAttente(){ localStorage.setItem('attente', JSON.stringify(attente)); }
 function cle(e){ return e.enAttente ? e.cid : e.id; }
-function noeud(e){ return e.type === 'controle' ? 'controles' : 'prises'; }
+function noeud(e){ return e.type === 'releve' ? 'controles' : 'prises'; }
+function svParId(id){
+  return CONFIG.surveillances.filter(function(s){ return s.id === id; })[0] || null;
+}
 
-/* Fusionne ce que le serveur a confirmé et ce qui attend d'être envoyé. */
 function entrees(type){
-  var n = type === 'controle' ? 'controles' : 'prises';
+  var n = type === 'releve' ? 'controles' : 'prises';
   var src = distant[n] || {};
   var cids = {};
   Object.keys(src).forEach(function(k){ if (src[k] && src[k].cid) cids[src[k].cid] = 1; });
@@ -487,7 +519,7 @@ function entrees(type){
 }
 
 function lesPrises(){ return entrees('prise').filter(function(p){ return !!p.med; }); }
-function lesControles(){ return entrees('controle'); }
+function lesReleves(){ return entrees('releve'); }
 
 /* =======================================================================
    Écriture — tout part d'abord en file locale : un clic n'est jamais perdu.
@@ -500,15 +532,15 @@ function enregistrePrise(medId, horsProtocole, quand){
   sauveAttente(); fermeUi(); rendu(true); videFile();
 }
 
-function enregistreControle(toutVaBien, quand){
-  attente.push({ cid: nouvelleCle(), type: 'controle',
+function enregistreReleve(quoi, toutVaBien, quand){
+  attente.push({ cid: nouvelleCle(), type: 'releve', quoi: quoi,
                  ts: quand === undefined ? now() : quand, ok: !!toutVaBien });
   sauveAttente(); fermeUi(); rendu(true); videFile();
 }
 
 function corpsEnvoi(p){
-  return p.type === 'controle'
-    ? { ts: p.ts, ok: p.ok, cid: p.cid }
+  return p.type === 'releve'
+    ? { ts: p.ts, ok: p.ok, quoi: p.quoi, cid: p.cid }
     : { med: p.med, ts: p.ts, hp: p.hp, cid: p.cid };
 }
 
@@ -517,7 +549,7 @@ async function videFile(){
   var restantes = [];
   for (var i = 0; i < attente.length; i++){
     var p = attente[i];
-    var n = p.type === 'controle' ? 'controles' : 'prises';
+    var n = p.type === 'releve' ? 'controles' : 'prises';
     try{
       var res = await fetch(BASE + '/' + n + '.json', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -606,10 +638,8 @@ function ecoute(n){
 
 async function recharge(){
   try{
-    var d = await (await fetch(BASE + '/prises.json')).json();
-    distant.prises = d || {};
-    var c = await (await fetch(BASE + '/controles.json')).json();
-    distant.controles = c || {};
+    distant.prises = (await (await fetch(BASE + '/prises.json')).json()) || {};
+    distant.controles = (await (await fetch(BASE + '/controles.json')).json()) || {};
     majBandeau(); rendu(true);
   }catch(e){ majBandeau(); }
 }
@@ -635,6 +665,18 @@ function bouton(cls, texte, action){
   var b = el('button', cls, texte);
   b.onclick = action;
   return b;
+}
+
+function carteAppel(tel, dansAlarme){
+  var a = document.createElement('a');
+  a.className = 'appel' + (tel.urgence && !dansAlarme ? ' urgence' : '');
+  a.href = 'tel:' + tel.tel;
+  var q = el('div', 'qui');
+  q.appendChild(el('b', '', tel.qui));
+  if (tel.note && !dansAlarme) q.appendChild(el('span', '', tel.note));
+  a.appendChild(q);
+  a.appendChild(el('span', 'num', tel.num));
+  return a;
 }
 
 function alerte(msg, avecReessai){
@@ -665,8 +707,7 @@ function champsDateHeure(t){
   var sel = el('select');
   sel.setAttribute('aria-label', 'Jour');
   for (var i = 0; i < CONFIG.joursSaisie; i++){
-    var jour = new Date(t - i * J);
-    var libelle = i === 0 ? 'Aujourd’hui' : i === 1 ? 'Hier' : dateCourte(jour.getTime());
+    var libelle = i === 0 ? 'Aujourd’hui' : i === 1 ? 'Hier' : dateCourte(t - i * J);
     var opt = el('option', '', libelle);
     opt.value = String(i);
     if (i === ui.form.jour) opt.selected = true;
@@ -696,65 +737,70 @@ function litFormulaire(t){
   return ts;
 }
 
-/* ---- contrôle du plâtre ---- */
-function renduPlatre(ec, t){
-  var box = document.getElementById('platre');
+/* ---- surveillance ---- */
+function renduSurveillance(etatsSv, t){
+  var box = document.getElementById('surveillance');
   box.textContent = '';
 
-  if (ui.platre === 'liste'){ box.appendChild(panneauListe()); return; }
-  if (ui.platre === 'alerte'){ box.appendChild(panneauAlerte()); return; }
+  etatsSv.forEach(function(es){
+    var sv = es.sv;
 
-  if (ec.anomalie){
-    var al = el('div', 'alarme');
-    al.appendChild(el('h3', '', 'Anomalie signalée à ' + hhmm(ec.dernier.ts)));
-    al.appendChild(el('p', '', 'Si ce n’est pas déjà fait, appelez le service de chirurgie pédiatrique au 01 30 75 47 80. Refaites un contrôle une fois rassuré.'));
-    al.appendChild(bouton('bouton', 'Faire un nouveau contrôle', function(){
-      fermeUi(); ui.platre = 'liste'; rendu(true);
+    if (ui.surv === sv.id && ui.survMode === 'alerte'){ box.appendChild(panneauAlerte(sv)); return; }
+    if (ui.surv === sv.id){ box.appendChild(panneauListe(sv)); return; }
+
+    if (es.anomalie){
+      var al = el('div', 'alarme');
+      al.appendChild(el('h3', '', 'Anomalie signalée à ' + hhmm(es.dernier.ts)));
+      al.appendChild(el('p', '', 'Si ce n’est pas déjà fait, appelez le service de chirurgie pédiatrique au 01 30 75 47 80. Refaites un contrôle une fois rassuré.'));
+      al.appendChild(bouton('bouton', 'Faire un nouveau contrôle', function(){
+        fermeUi(); ui.surv = sv.id; rendu(true);
+      }));
+      box.appendChild(al);
+      return;
+    }
+
+    if (es.du){
+      var c = el('div', 'action');
+      c.dataset.sujet = sv.id;
+      c.appendChild(el('h3', '', sv.titreDu));
+      c.appendChild(el('p', 'dose', sv.sousTitre));
+      c.appendChild(el('p', 'detail', es.dernier
+        ? 'Dernier il y a ' + duree(t - es.dernier.ts) + ' (' + hhmm(es.dernier.ts) + ')'
+          + ' — ' + es.nb24 + ' en 24 h'
+        : 'Rien d’enregistré pour l’instant — à faire toutes les ' + sv.intervalleH + ' h'));
+      c.appendChild(bouton('bouton', sv.action, function(){
+        fermeUi(); ui.surv = sv.id; rendu(true);
+      }));
+      box.appendChild(c);
+      return;
+    }
+
+    var p = el('div', 'pause');
+    p.dataset.sujet = sv.id;
+    var haut = el('div', 'haut');
+    haut.appendChild(el('span', 'nom', sv.titreOk));
+    var reste = el('span', 'reste', duree(es.restant));
+    reste.dataset.cible = String(es.prochain);
+    reste.dataset.format = 'duree';
+    haut.appendChild(reste);
+    p.appendChild(haut);
+    p.appendChild(el('p', 'quand', 'À ' + hhmm(es.dernier.ts)
+      + ' — prochain à ' + hhmm(es.prochain) + ' · ' + es.nb24 + ' en 24 h'));
+    if (sv.rappel) p.appendChild(el('p', 'rappel', sv.rappel));
+    p.appendChild(bouton('lien', sv.action + ' maintenant', function(){
+      fermeUi(); ui.surv = sv.id; rendu(true);
     }));
-    box.appendChild(al);
-    return;
-  }
-
-  if (ec.du){
-    var c = el('div', 'action');
-    c.dataset.med = 'platre';
-    c.appendChild(el('h3', '', 'Contrôle à faire'));
-    c.appendChild(el('p', 'dose', 'Orteils et plâtre'));
-    c.appendChild(el('p', 'detail', ec.dernier
-      ? 'Dernier contrôle à ' + hhmm(ec.dernier.ts) + ', il y a ' + duree(t - ec.dernier.ts)
-        + ' — ' + ec.nb24 + ' contrôles en 24 h'
-      : 'Aucun contrôle enregistré pour l’instant'));
-    c.appendChild(bouton('bouton', 'Faire le contrôle', function(){
-      fermeUi(); ui.platre = 'liste'; rendu(true);
-    }));
-    box.appendChild(c);
-    return;
-  }
-
-  var p = el('div', 'pause');
-  p.dataset.med = 'platre';
-  var haut = el('div', 'haut');
-  haut.appendChild(el('span', 'nom', 'Plâtre vérifié'));
-  var reste = el('span', 'reste', duree(ec.restant));
-  reste.dataset.cible = String(ec.prochain);
-  reste.dataset.format = 'duree';
-  haut.appendChild(reste);
-  p.appendChild(haut);
-  p.appendChild(el('p', 'quand', 'Dernier contrôle à ' + hhmm(ec.dernier.ts)
-    + ' — prochain à ' + hhmm(ec.prochain) + ' · ' + ec.nb24 + ' contrôles en 24 h'));
-  p.appendChild(bouton('lien', 'Faire un contrôle maintenant', function(){
-    fermeUi(); ui.platre = 'liste'; rendu(true);
-  }));
-  box.appendChild(p);
+    box.appendChild(p);
+  });
 }
 
-function panneauListe(){
+function panneauListe(sv){
   var pan = el('div', 'panneau');
-  pan.dataset.med = 'controle';
-  pan.appendChild(el('p', 'quoi', 'Ce qu’il faut regarder'));
+  pan.dataset.sujet = sv.id;
+  pan.appendChild(el('p', 'quoi', sv.intro));
 
   var liste = el('div', 'liste');
-  CONFIG.controle.groupes.forEach(function(g){
+  sv.groupes.forEach(function(g){
     liste.appendChild(el('h4', '', g.titre));
     var ul = el('ul');
     g.points.forEach(function(pt){
@@ -768,50 +814,31 @@ function panneauListe(){
   pan.appendChild(liste);
 
   var duo = el('div', 'duo');
-  duo.appendChild(bouton('bouton ok', 'Tout est normal', function(){ enregistreControle(true); }));
-  duo.appendChild(bouton('bouton nok', 'Quelque chose ne va pas', function(){
-    ui.platre = 'alerte'; rendu(true);
-  }));
+  duo.appendChild(bouton('bouton ok', sv.valide, function(){ enregistreReleve(sv.id, true); }));
+  if (sv.avecAlerte){
+    duo.appendChild(bouton('bouton nok', 'Quelque chose ne va pas', function(){
+      ui.survMode = 'alerte'; rendu(true);
+    }));
+  }
   pan.appendChild(duo);
   pan.appendChild(bouton('lien', 'Fermer', function(){ fermeUi(); rendu(true); }));
   return pan;
 }
 
-function panneauAlerte(){
+function panneauAlerte(sv){
   var al = el('div', 'alarme');
   al.appendChild(el('h3', '', 'Appelez maintenant'));
-  CONFIG.controle.conduite.forEach(function(ligne){ al.appendChild(el('p', '', ligne)); });
-
-  CONFIG.telephones.slice(0, 2).forEach(function(tel){
-    var a = document.createElement('a');
-    a.className = 'appel';
-    a.href = 'tel:' + tel.tel;
-    var q = el('div', 'qui');
-    q.appendChild(el('b', '', tel.qui));
-    a.appendChild(q);
-    a.appendChild(el('span', 'num', tel.num));
-    al.appendChild(a);
-  });
-
-  al.appendChild(bouton('bouton', 'Enregistrer l’anomalie', function(){ enregistreControle(false); }));
-  al.appendChild(bouton('lien', 'Retour', function(){ ui.platre = 'liste'; rendu(true); }));
+  (sv.conduite || []).forEach(function(ligne){ al.appendChild(el('p', '', ligne)); });
+  CONFIG.telephones.slice(0, 2).forEach(function(tel){ al.appendChild(carteAppel(tel, true)); });
+  al.appendChild(bouton('bouton', 'Enregistrer l’anomalie', function(){ enregistreReleve(sv.id, false); }));
+  al.appendChild(bouton('lien', 'Retour', function(){ ui.survMode = null; rendu(true); }));
   return al;
 }
 
 function renduTelephones(){
   var box = document.getElementById('telephones');
   box.textContent = '';
-  CONFIG.telephones.forEach(function(tel){
-    var a = document.createElement('a');
-    a.className = 'appel' + (tel.urgence ? ' urgence' : '');
-    a.href = 'tel:' + tel.tel;
-    var q = el('div', 'qui');
-    q.appendChild(el('b', '', tel.qui));
-    if (tel.note) q.appendChild(el('span', '', tel.note));
-    a.appendChild(q);
-    a.appendChild(el('span', 'num', tel.num));
-    box.appendChild(a);
-  });
+  CONFIG.telephones.forEach(function(tel){ box.appendChild(carteAppel(tel, false)); });
 }
 
 /* ---- médicaments ---- */
@@ -833,7 +860,7 @@ function renduMaintenant(etats, t){
     var m = e.med;
     if (e.dispo){
       var c = el('div', 'action');
-      c.dataset.med = m.id;
+      c.dataset.sujet = m.id;
       c.appendChild(el('h3', '', m.nom));
       c.appendChild(el('p', 'dose', m.dose));
       c.appendChild(el('p', 'detail', m.detail + ' — jour ' + Math.min(jour, m.jours) + ' sur ' + m.jours));
@@ -845,7 +872,7 @@ function renduMaintenant(etats, t){
     }
 
     var p = el('div', 'pause');
-    p.dataset.med = m.id;
+    p.dataset.sujet = m.id;
     var haut = el('div', 'haut');
     haut.appendChild(el('span', 'nom', m.nom));
     var reste = el('span', 'reste', duree(e.restant));
@@ -880,7 +907,7 @@ function renduMaintenant(etats, t){
   });
 }
 
-function renduEnsuite(etats, slots, ec, t){
+function renduEnsuite(etats, slots, etatsSv, t){
   var box = document.getElementById('ensuite');
   box.textContent = '';
 
@@ -890,7 +917,7 @@ function renduEnsuite(etats, slots, ec, t){
     var liste = el('ol', 'frise');
     slots.forEach(function(s){
       var li = el('li', 'etape' + (s.hypothetique ? ' hypo' : ''));
-      li.dataset.med = s.med.id;
+      li.dataset.sujet = s.med.id;
       li.appendChild(el('span', 'heure', hhmm(s.ts)));
       li.appendChild(el('span', 'quoi', s.med.nom));
       var r = el('span', 'relatif', relatif(s.ts, t));
@@ -907,10 +934,10 @@ function renduEnsuite(etats, slots, ec, t){
     }
   }
 
-  if (!ec.du){
-    box.appendChild(el('p', 'note',
-      'Prochain contrôle du plâtre à ' + hhmm(ec.prochain) + '.'));
-  }
+  var enCours = etatsSv.filter(function(es){ return !es.du; })
+                       .map(function(es){ return es.sv.nom.toLowerCase() + ' à ' + hhmm(es.prochain); });
+  if (enCours.length) box.appendChild(el('p', 'note', 'Prochain ' + enCours.join(', prochain ') + '.'));
+
   etats.filter(function(e){ return e.termine; }).forEach(function(e){
     box.appendChild(el('p', 'note',
       e.med.nom + ' : traitement terminé, dernier jour le ' + dateCourte(e.fin - J) + '.'));
@@ -925,19 +952,23 @@ function libelleJour(ts, t){
   return new Date(ts).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
 }
 
+function sujetEntree(e){ return e.type === 'releve' ? (e.quoi || 'platre') : e.med; }
+
 function libelleEntree(e){
-  if (e.type === 'controle') return e.ok === false ? 'Plâtre — anomalie signalée' : 'Contrôle du plâtre';
-  return nomMed(e.med);
+  if (e.type !== 'releve') return nomMed(e.med);
+  var sv = svParId(e.quoi || 'platre');
+  var nom = sv ? sv.nom : 'Surveillance';
+  return e.ok === false ? nom + ' — anomalie signalée' : nom;
 }
 
 function classePastille(e){
-  if (e.type === 'controle') return e.ok === false ? 'anomalie' : 'controle';
+  if (e.type === 'releve') return e.ok === false ? 'anomalie' : (e.quoi || 'platre');
   return e.med;
 }
 
 function panneauEntree(e, t){
   var pan = el('div', 'panneau');
-  pan.dataset.med = e.type === 'controle' ? 'controle' : e.med;
+  pan.dataset.sujet = sujetEntree(e);
   pan.appendChild(el('p', 'quoi', libelleEntree(e) + ' du ' + dateCourte(e.ts) + ' à ' + hhmm(e.ts)));
 
   if (ui.mode === 'suppr'){
@@ -967,16 +998,18 @@ function panneauEntree(e, t){
 
 function panneauAjout(t){
   var pan = el('div', 'panneau');
-  pan.dataset.med = ui.form.med;
+  pan.dataset.sujet = ui.form.sujet;
   pan.appendChild(el('p', 'quoi', 'Enregistrer quelque chose d’oublié'));
 
   var choix = el('div', 'choixmed');
-  var options = CONFIG.meds.map(function(m){ return { id: m.id, nom: m.nom }; })
-                           .concat([{ id: 'controle', nom: 'Contrôle' }]);
+  var options = CONFIG.meds.map(function(m){ return { id:m.id, nom:m.nom }; })
+    .concat(CONFIG.surveillances.map(function(s){
+      return { id:s.id, nom: s.id === 'platre' ? 'Contrôle' : 'Position' };
+    }));
   options.forEach(function(o){
-    var b = el('button', ui.form.med === o.id ? 'actif' : '', o.nom);
-    b.dataset.med = o.id;
-    b.onclick = function(){ ui.form.med = o.id; rendu(true); };
+    var b = el('button', ui.form.sujet === o.id ? 'actif' : '', o.nom);
+    b.dataset.sujet = o.id;
+    b.onclick = function(){ ui.form.sujet = o.id; rendu(true); };
     choix.appendChild(b);
   });
   pan.appendChild(choix);
@@ -985,8 +1018,8 @@ function panneauAjout(t){
   champs.appendChild(bouton('btn', 'Ajouter', function(){
     var ts = litFormulaire(t);
     if (ts === null){ rendu(true); return; }
-    if (ui.form.med === 'controle') enregistreControle(true, ts);
-    else enregistrePrise(ui.form.med, false, ts);
+    if (svParId(ui.form.sujet)) enregistreReleve(ui.form.sujet, true, ts);
+    else enregistrePrise(ui.form.sujet, false, ts);
   }));
   champs.appendChild(bouton('btn secondaire', 'Annuler', function(){ fermeUi(); rendu(true); }));
   pan.appendChild(champs);
@@ -1000,7 +1033,7 @@ function ouvreEntree(e, t){
   ui.ligne = cle(e);
   ui.mode = 'edit';
   ui.form = {
-    med: e.type === 'controle' ? 'controle' : e.med,
+    sujet: sujetEntree(e),
     jour: Math.min(Math.max(ecart, 0), CONFIG.joursSaisie - 1),
     heure: pad(new Date(e.ts).getHours()) + ':' + pad(new Date(e.ts).getMinutes())
   };
@@ -1012,7 +1045,7 @@ function renduHistorique(tout, t){
   box.textContent = '';
 
   if (!tout.length){
-    box.appendChild(el('p', 'vide', 'Rien d’enregistré pour l’instant. Les prises et les contrôles apparaîtront ici.'));
+    box.appendChild(el('p', 'vide', 'Rien d’enregistré pour l’instant.'));
   } else {
     var tri = tout.slice().sort(function(a, b){ return b.ts - a.ts; });
     var jourCourant = null;
@@ -1045,7 +1078,7 @@ function renduHistorique(tout, t){
     zone.appendChild(bouton('btn secondaire', 'Ajouter quelque chose d’oublié', function(){
       fermeUi();
       ui.ajout = true;
-      ui.form = { med: 'paracetamol', jour: 0,
+      ui.form = { sujet: 'paracetamol', jour: 0,
                   heure: pad(new Date(t).getHours()) + ':' + pad(new Date(t).getMinutes()) };
       rendu(true);
     }));
@@ -1058,26 +1091,26 @@ function renduHistorique(tout, t){
 function rendu(force){
   var t = now();
   var prises = lesPrises();
-  var controles = lesControles();
+  var releves = lesReleves();
   var etats = CONFIG.meds.map(function(m){
     return etatMed(m, prises, t, DEBUT, CONFIG.ecartCroiseH);
   });
   var slots = planning(etats, t, CONFIG.aVenir).slice(0, CONFIG.aVenir);
-  var ec = etatControle(controles, t, CONFIG.controle.intervalleH);
-  var tout = prises.concat(controles);
+  var etatsSv = CONFIG.surveillances.map(function(sv){ return etatSurveillance(sv, releves, t); });
+  var tout = prises.concat(releves);
 
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
-    [ec.du, ec.prochain, ec.anomalie, ec.nb24],
+    etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24]; }),
     tout.map(function(e){ return cle(e) + ':' + e.ts; }).sort(),
-    [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.platre, ui.erreur, ui.form.med]
+    [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode, ui.erreur, ui.form.sujet]
   ]);
 
   if (force || signature !== derniereSignature){
     derniereSignature = signature;
-    renduPlatre(ec, t);
+    renduSurveillance(etatsSv, t);
     renduMaintenant(etats, t);
-    renduEnsuite(etats, slots, ec, t);
+    renduEnsuite(etats, slots, etatsSv, t);
     renduHistorique(tout, t);
   } else {
     tic(t);
