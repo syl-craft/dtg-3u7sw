@@ -13,7 +13,6 @@
   --para:#0E5C63; --para-pale:#E2EDEE;
   --ibu:#7A2E5C; --ibu-pale:#F2E5EC;
   --alert:#B3261E; --alert-pale:#FBE9E7;
-  --pad:16px;
 }
 @media (prefers-color-scheme:dark){
   :root{
@@ -32,14 +31,17 @@ body{
   font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
-.wrap{max-width:560px; margin:0 auto; padding:0 var(--pad) 48px}
+.wrap{max-width:560px; margin:0 auto; padding:0 16px 48px}
 
-header{padding:20px 0 14px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
+header{padding:20px 0 6px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
 header h1{margin:0; font-size:26px; font-weight:800; letter-spacing:-.02em}
 header .poids{color:var(--muted); font-weight:500; font-size:15px}
 
+.section{margin:30px 0 12px; font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.section:first-of-type{margin-top:22px}
+
 #bandeau{
-  display:none; margin:0 0 14px; padding:12px 14px; border-radius:4px;
+  display:none; margin:14px 0 0; padding:12px 14px; border-radius:4px;
   background:var(--alert-pale); color:var(--alert); border-left:5px solid var(--alert);
   font-weight:600; font-size:15px;
 }
@@ -49,67 +51,79 @@ header .poids{color:var(--muted); font-weight:500; font-size:15px}
   background:var(--alert); color:#fff; border:0; border-radius:3px; padding:10px 14px; min-height:44px;
 }
 
-.med{
-  margin:0 0 18px; border-radius:6px; overflow:hidden;
-  background:var(--card); border:1px solid var(--line);
-}
-.med.dispo{border:0}
-.med[data-id=paracetamol].dispo{background:var(--para); color:#fff}
-.med[data-id=ibuprofene].dispo{background:var(--ibu); color:#fff}
-.med[data-id=paracetamol].attente{background:var(--para-pale); border:0; border-left:7px solid var(--para)}
-.med[data-id=ibuprofene].attente{background:var(--ibu-pale); border:0; border-left:7px solid var(--ibu)}
-.med.fini{opacity:.62}
-
-.med .corps{padding:18px 18px 4px}
-.med h2{margin:0; font-size:23px; font-weight:800; letter-spacing:-.015em}
-.med .dose{margin:2px 0 0; font-size:17px; font-weight:600}
-.med .detail{margin:1px 0 0; font-size:14px; opacity:.72}
-
-.etat{margin:16px 0 0}
-.etat .titre{font-size:27px; font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:0}
-.med.attente .etat .titre{font-size:40px}
-.med[data-id=paracetamol].attente .etat .titre{color:var(--para)}
-.med[data-id=ibuprofene].attente .etat .titre{color:var(--ibu)}
-.etat .ligne{margin:5px 0 0; font-size:15px; opacity:.82}
-.etat .quota{margin:5px 0 0; font-size:14px; opacity:.68}
-
-.med .pied{padding:14px 18px 18px}
+/* ---- ce qu'on peut donner tout de suite ---- */
+.action{margin:0 0 12px; border-radius:6px; padding:18px; color:#fff}
+.action[data-med=paracetamol]{background:var(--para)}
+.action[data-med=ibuprofene]{background:var(--ibu)}
+.action h3{margin:0; font-size:24px; font-weight:800; letter-spacing:-.02em}
+.action .dose{margin:2px 0 0; font-size:17px; font-weight:600}
+.action .detail{margin:1px 0 14px; font-size:14px; opacity:.75}
 .bouton{
-  display:block; width:100%; min-height:66px; font:inherit; font-size:18px; font-weight:800;
-  letter-spacing:-.01em; border:0; border-radius:5px; cursor:pointer; padding:14px 16px;
-  background:var(--ink); color:var(--paper);
+  display:block; width:100%; min-height:68px; font:inherit; font-size:18px; font-weight:800;
+  letter-spacing:-.01em; border:0; border-radius:5px; cursor:pointer; padding:14px 16px; background:#fff;
 }
-.med.dispo .bouton{background:#fff}
-.med[data-id=paracetamol].dispo .bouton{color:var(--para)}
-.med[data-id=ibuprofene].dispo .bouton{color:var(--ibu)}
+.action[data-med=paracetamol] .bouton{color:var(--para)}
+.action[data-med=ibuprofene] .bouton{color:var(--ibu)}
 .bouton:active{transform:translateY(1px)}
 .bouton[disabled]{opacity:.55; cursor:default}
 
+/* ---- ce qu'il faut attendre ---- */
+.pause{margin:0 0 12px; border-radius:6px; padding:15px 16px; background:var(--card); border:1px solid var(--line)}
+.pause[data-med=paracetamol]{border-left:7px solid var(--para)}
+.pause[data-med=ibuprofene]{border-left:7px solid var(--ibu)}
+.pause .haut{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+.pause .nom{font-size:19px; font-weight:800; letter-spacing:-.015em}
+.pause[data-med=paracetamol] .nom,.pause[data-med=paracetamol] .reste{color:var(--para)}
+.pause[data-med=ibuprofene] .nom,.pause[data-med=ibuprofene] .reste{color:var(--ibu)}
+.pause .reste{font-size:26px; font-weight:800; letter-spacing:-.02em; white-space:nowrap}
+.pause .quand{margin:2px 0 0; font-size:14.5px; color:var(--muted)}
+.rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
+
 .lien{
-  display:inline-block; margin-top:4px; background:none; border:0; padding:8px 0;
-  font:inherit; font-size:15px; font-weight:600; color:inherit; opacity:.7;
+  display:inline-block; margin-top:8px; background:none; border:0; padding:6px 0;
+  font:inherit; font-size:14.5px; font-weight:600; color:var(--muted);
   text-decoration:underline; text-underline-offset:3px; cursor:pointer;
 }
-.confirm{margin-top:4px; padding:13px 14px; border-radius:4px; background:var(--alert-pale); border-left:5px solid var(--alert)}
+.confirm{margin-top:10px; padding:13px 14px; border-radius:4px; background:var(--alert-pale); border-left:5px solid var(--alert)}
 .confirm p{margin:0 0 10px; font-size:14px; color:var(--alert); font-weight:600}
 .confirm .row{display:flex; gap:10px; flex-wrap:wrap}
 .confirm button{font:inherit; font-weight:700; font-size:15px; border:0; border-radius:4px; padding:12px 16px; min-height:48px; cursor:pointer}
 .confirm .oui{background:var(--alert); color:#fff}
 .confirm .non{background:transparent; color:var(--ink); border:1px solid var(--line)}
 
-h3{margin:32px 0 10px; font-size:14px; font-weight:800; letter-spacing:.02em; color:var(--muted)}
+/* ---- planning chronologique ---- */
+.frise{list-style:none; margin:0; padding:2px 0 0 28px; position:relative}
+.frise::before{content:''; position:absolute; left:7px; top:20px; bottom:22px; width:2px; background:var(--line)}
+.etape{position:relative; display:flex; align-items:baseline; gap:12px; padding:14px 0; border-bottom:1px solid var(--line)}
+.etape:last-child{border-bottom:0}
+.etape::before{
+  content:''; position:absolute; left:-28px; top:19px; width:16px; height:16px;
+  border-radius:50%; background:var(--paper); border:4px solid var(--line);
+}
+.etape[data-med=paracetamol]::before{border-color:var(--para)}
+.etape[data-med=ibuprofene]::before{border-color:var(--ibu)}
+.etape.hypo::before{background:var(--paper); border-style:dotted}
+.etape .heure{font-size:23px; font-weight:800; letter-spacing:-.025em; min-width:78px}
+.etape[data-med=paracetamol] .heure{color:var(--para)}
+.etape[data-med=ibuprofene] .heure{color:var(--ibu)}
+.etape .quoi{flex:1; font-size:16px; font-weight:600}
+.etape .relatif{font-size:14px; color:var(--muted); white-space:nowrap}
+.etape.hypo{opacity:.68}
+.note{margin:12px 0 0; font-size:13.5px; color:var(--muted)}
+
+/* ---- historique ---- */
 .jour{margin:18px 0 6px; font-size:14px; font-weight:700; color:var(--muted)}
-.jour:first-of-type{margin-top:0}
+.jour:first-child{margin-top:0}
 .prise{display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line)}
 .prise .h{font-weight:700; font-size:16px; min-width:56px}
 .prise .pastille{width:11px; height:11px; border-radius:50%; flex:none}
 .prise .pastille.paracetamol{background:var(--para)}
 .prise .pastille.ibuprofene{background:var(--ibu)}
-.prise .nom{flex:1; font-size:16px}
+.prise .nomp{flex:1; font-size:16px}
 .prise .tag{font-size:12px; font-weight:700; color:var(--alert); border:1px solid var(--alert); border-radius:3px; padding:2px 6px}
 .prise .tag.enattente{color:var(--muted); border-color:var(--line)}
 .prise .annuler{font:inherit; font-size:14px; font-weight:600; background:none; border:0; color:var(--muted); text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:6px}
-.vide{color:var(--muted); font-size:15px; padding:8px 0}
+.vide{color:var(--muted); font-size:15px; padding:4px 0}
 
 footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px}
 footer p{margin:0 0 7px}
@@ -128,14 +142,19 @@ footer strong{color:var(--ink)}
   </header>
 
   <div id="bandeau" role="alert"></div>
-  <div id="meds"></div>
 
-  <h3>Historique</h3>
+  <h2 class="section">Maintenant</h2>
+  <div id="maintenant"></div>
+
+  <h2 class="section">Ensuite</h2>
+  <div id="ensuite"></div>
+
+  <h2 class="section">Historique</h2>
   <div id="histo"></div>
 
   <footer>
     <p>Les deux comptes à rebours sont indépendants. Aucun délai n'est imposé entre les deux médicaments&nbsp;: ils peuvent être donnés ensemble pour renforcer l'effet antalgique. L'ibuprofène se donne <strong>avec quelque chose à manger</strong>.</p>
-    <p>Délais de 6&nbsp;h et 8&nbsp;h confirmés par le service de chirurgie pédiatrique le 15/09/2026. Ordonnance du Dr Wassom du 14/09/2026, Hôpital NOVO Pontoise. Doses calculées sur le poids réel de 19&nbsp;kg.</p>
+    <p>Délais de 6&nbsp;h et 8&nbsp;h confirmés par le service de chirurgie pédiatrique le 15/09/2026. Ordonnance du Dr Wassom du 14/09/2026, Hôpital NOVO Pontoise. Première prise le 15/09 à 11&nbsp;h. Doses calculées sur le poids réel de 19&nbsp;kg.</p>
     <p>En cas de doute, appeler le service de soins&nbsp;: <a href="tel:+33130754780">01 30 75 47 80</a>. Urgence&nbsp;: <a href="tel:15">15</a>.</p>
   </footer>
 </div>
@@ -147,8 +166,9 @@ footer strong{color:var(--ink)}
    service de chirurgie pédiatrique de l'hôpital NOVO le 15/09/2026.
    ======================================================================= */
 var CONFIG = {
-  debut: '2026-09-14',   // premier jour du traitement
+  debut: '2026-09-15',   // premier jour du traitement (première prise à 11 h)
   ecartCroiseH: 0,       // délai imposé ENTRE les deux molécules (0 = aucun)
+  aVenir: 6,             // nombre de créneaux affichés dans le planning
   meds: [
     { id:'paracetamol', nom:'Paracétamol', action:'J’ai donné le paracétamol',
       dose:'285 mg — 1 dose-poids 19 kg', detail:'12 mL de suspension 2,4 % (24 mg/mL)',
@@ -171,6 +191,8 @@ function duree(ms){
   var h = Math.floor(m / 60), r = m % 60;
   return r ? h + ' h ' + pad(r) : h + ' h';
 }
+
+function relatif(ts, t){ return ts - t <= 0 ? 'maintenant' : 'dans ' + duree(ts - t); }
 
 function finTraitement(debutMs, jours){ return debutMs + jours * J; }
 function jourTraitement(t, debutMs){ return Math.floor((t - debutMs) / J) + 1; }
@@ -206,20 +228,26 @@ function etatMed(med, prises, t, debutMs, ecartCroiseH){
   if (parQuota > 0 && parQuota === dispoA) cause = 'quota';
   else if (parCroise > 0 && parCroise === dispoA) cause = 'croise';
 
-  /* Projection ancrée sur l'heure de disponibilité, ou sur MAINTENANT si le
-     délai est déjà écoulé — sinon on proposerait des horaires déjà passés. */
-  var ancre = dispo ? t : dispoA;
-  var suivantes = [];
-  if (!termine){
-    for (var i = 1; i <= 2; i++){
-      var ts = ancre + i * interval;
-      if (ts < fin) suivantes.push(ts);
-    }
-  }
-
   return { med: med, derniere: derniere, dispo: dispo, dispoA: dispoA, cause: cause,
-           nb24: nb24, termine: termine, fin: fin, ancre: ancre, suivantes: suivantes,
-           restant: Math.max(0, dispoA - t) };
+           nb24: nb24, termine: termine, fin: fin, restant: Math.max(0, dispoA - t) };
+}
+
+/* Créneaux à venir, les deux molécules fusionnées et triées par heure.
+   Un médicament déjà disponible n'a pas d'heure imposée : ses créneaux
+   supposent une prise immédiate et sont marqués « hypothétiques ». */
+function planning(etats, t, parMed){
+  var slots = [];
+  etats.forEach(function(e){
+    if (e.termine) return;
+    var interval = e.med.intervalleH * H;
+    var depart = e.dispo ? t + interval : e.dispoA;
+    for (var i = 0; i < parMed; i++){
+      var ts = depart + i * interval;
+      if (ts >= e.fin) break;
+      slots.push({ med: e.med, ts: ts, hypothetique: e.dispo });
+    }
+  });
+  return slots.sort(function(a, b){ return a.ts - b.ts; });
 }
 /* ---- LOGIQUE PURE (fin) ---- */
 
@@ -365,23 +393,20 @@ async function recharge(){
    Affichage
    ======================================================================= */
 function hhmm(ts){ var d = new Date(ts); return d.getHours() + 'h' + pad(d.getMinutes()); }
+function dateCourte(ts){ var d = new Date(ts); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1); }
 
-function dateCourte(ts){
-  var d = new Date(ts);
-  return pad(d.getDate()) + '/' + pad(d.getMonth() + 1);
-}
-
-function ajoute(parent, cls, texte){
-  var p = document.createElement('p');
-  p.className = cls; p.textContent = texte; parent.appendChild(p); return p;
+function el(tag, cls, texte){
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (texte !== undefined) n.textContent = texte;
+  return n;
 }
 
 function alerte(msg, avecReessai){
   var b = document.getElementById('bandeau');
   b.textContent = msg;
   if (avecReessai){
-    var btn = document.createElement('button');
-    btn.textContent = 'Réessayer maintenant';
+    var btn = el('button', '', 'Réessayer maintenant');
     btn.onclick = function(){ videFile(); recharge(); };
     b.appendChild(btn);
   }
@@ -404,87 +429,109 @@ function majBandeau(){
   }
 }
 
-function blocMed(e){
+function boutonHorsProtocole(e, hote){
   var m = e.med;
-  var sec = document.createElement('section');
-  sec.className = 'med ' + (e.termine ? 'fini' : e.dispo ? 'dispo' : 'attente');
-  sec.dataset.id = m.id;
-
-  var corps = document.createElement('div');
-  corps.className = 'corps';
-  corps.innerHTML = '<h2></h2><p class="dose"></p><p class="detail"></p><div class="etat"><p class="titre"></p></div>';
-  corps.querySelector('h2').textContent = m.nom;
-  corps.querySelector('.dose').textContent = m.dose;
-
-  var jour = Math.min(Math.max(jourTraitement(now(), DEBUT), 1), m.jours);
-  corps.querySelector('.detail').textContent = m.detail + ' — jour ' + jour + ' sur ' + m.jours;
-
-  var etat = corps.querySelector('.etat');
-  var titre = etat.querySelector('.titre');
-
-  if (e.termine){
-    titre.textContent = 'Traitement terminé';
-    ajoute(etat, 'ligne', 'Dernier jour prévu : ' + dateCourte(e.fin - J) + '.');
-  } else if (e.dispo){
-    titre.textContent = 'À donner maintenant';
-    if (e.suivantes.length){
-      ajoute(etat, 'ligne', 'Si donnée maintenant (' + hhmm(e.ancre) + '), les suivantes tombent à '
-        + e.suivantes.map(hhmm).join(' et ') + '.');
-    }
-    ajoute(etat, 'quota', e.derniere
-      ? 'Dernière prise à ' + hhmm(e.derniere.ts) + ', il y a ' + duree(now() - e.derniere.ts)
-        + ' — ' + e.nb24 + ' sur ' + m.max24 + ' prises en 24 h.'
-      : 'Aucune prise enregistrée pour l’instant.');
+  if (confirmOuvert[m.id]){
+    var box = el('div', 'confirm');
+    box.appendChild(el('p', '', 'Il reste ' + duree(e.restant)
+      + ' avant la prochaine dose prévue. Enregistrer quand même ?'));
+    var row = el('div', 'row');
+    var oui = el('button', 'oui', 'Oui, la dose a été donnée');
+    oui.onclick = function(){ confirmOuvert[m.id] = false; enregistre(m.id, true); };
+    var non = el('button', 'non', 'Annuler');
+    non.onclick = function(){ confirmOuvert[m.id] = false; rendu(true); };
+    row.appendChild(oui); row.appendChild(non);
+    box.appendChild(row);
+    hote.appendChild(box);
   } else {
-    titre.textContent = duree(e.restant);
-    titre.dataset.compte = '1';
-    var raison;
-    if (e.cause === 'quota'){
-      raison = 'Maximum de ' + m.max24 + ' prises sur 24 h atteint. Possible à ' + hhmm(e.dispoA);
-    } else if (e.cause === 'croise'){
-      raison = 'Écart à respecter avec l’autre médicament. Possible à ' + hhmm(e.dispoA);
-    } else {
-      raison = 'Possible à ' + hhmm(e.dispoA);
-    }
-    ajoute(etat, 'ligne', raison
-      + (e.suivantes.length ? ', puis ' + e.suivantes.map(hhmm).join(' et ') + '.' : '.'));
-    ajoute(etat, 'quota', 'Dernière prise à ' + hhmm(e.derniere.ts)
-      + ' — ' + e.nb24 + ' sur ' + m.max24 + ' prises en 24 h.');
+    var l = el('button', 'lien', 'La dose a été donnée quand même');
+    l.onclick = function(){ confirmOuvert[m.id] = true; rendu(true); };
+    hote.appendChild(l);
+  }
+}
+
+function renduMaintenant(etats, t){
+  var box = document.getElementById('maintenant');
+  box.textContent = '';
+  var jour = Math.max(jourTraitement(t, DEBUT), 1);
+  var actifs = etats.filter(function(e){ return !e.termine; });
+
+  if (!actifs.length){
+    box.appendChild(el('div', 'rien', 'Les deux traitements sont terminés.'));
+    return;
+  }
+  if (!actifs.some(function(e){ return e.dispo; })){
+    box.appendChild(el('div', 'rien', 'Rien à donner pour le moment.'));
   }
 
-  var pied = document.createElement('div');
-  pied.className = 'pied';
-
-  if (!e.termine && e.dispo){
-    var b = document.createElement('button');
-    b.className = 'bouton';
-    b.textContent = m.action;
-    b.onclick = function(){ b.disabled = true; enregistre(m.id, false); };
-    pied.appendChild(b);
-  } else if (!e.termine){
-    if (confirmOuvert[m.id]){
-      var box = document.createElement('div');
-      box.className = 'confirm';
-      box.innerHTML = '<p></p><div class="row"><button class="oui"></button><button class="non">Annuler</button></div>';
-      box.querySelector('p').textContent =
-        'Il reste ' + duree(e.restant) + ' avant la prochaine dose prévue. Enregistrer quand même ?';
-      var oui = box.querySelector('.oui');
-      oui.textContent = 'Oui, la dose a été donnée';
-      oui.onclick = function(){ confirmOuvert[m.id] = false; enregistre(m.id, true); };
-      box.querySelector('.non').onclick = function(){ confirmOuvert[m.id] = false; rendu(true); };
-      pied.appendChild(box);
+  actifs.forEach(function(e){
+    var m = e.med;
+    if (e.dispo){
+      var c = el('div', 'action');
+      c.dataset.med = m.id;
+      c.appendChild(el('h3', '', m.nom));
+      c.appendChild(el('p', 'dose', m.dose));
+      c.appendChild(el('p', 'detail', m.detail + ' — jour ' + Math.min(jour, m.jours) + ' sur ' + m.jours));
+      var b = el('button', 'bouton', m.action);
+      b.onclick = function(){ b.disabled = true; enregistre(m.id, false); };
+      c.appendChild(b);
+      box.appendChild(c);
     } else {
-      var l = document.createElement('button');
-      l.className = 'lien';
-      l.textContent = 'La dose a été donnée quand même';
-      l.onclick = function(){ confirmOuvert[m.id] = true; rendu(true); };
-      pied.appendChild(l);
+      var p = el('div', 'pause');
+      p.dataset.med = m.id;
+      var haut = el('div', 'haut');
+      haut.appendChild(el('span', 'nom', m.nom));
+      var reste = el('span', 'reste', duree(e.restant));
+      reste.dataset.cible = String(e.dispoA);
+      reste.dataset.format = 'duree';
+      haut.appendChild(reste);
+      p.appendChild(haut);
+      var motif = e.cause === 'quota'
+        ? 'Maximum de ' + m.max24 + ' prises sur 24 h atteint — possible à ' + hhmm(e.dispoA)
+        : e.cause === 'croise'
+          ? 'Écart à respecter avec l’autre médicament — possible à ' + hhmm(e.dispoA)
+          : 'Possible à ' + hhmm(e.dispoA)
+            + (e.derniere ? ', dernière prise à ' + hhmm(e.derniere.ts) : '');
+      p.appendChild(el('p', 'quand', motif + ' · ' + e.nb24 + ' sur ' + m.max24 + ' prises en 24 h'));
+      boutonHorsProtocole(e, p);
+      box.appendChild(p);
     }
+  });
+}
+
+function renduEnsuite(etats, slots, t){
+  var box = document.getElementById('ensuite');
+  box.textContent = '';
+
+  if (!slots.length){
+    box.appendChild(el('div', 'vide', 'Plus aucune dose prévue : le traitement arrive à son terme.'));
+    return;
   }
 
-  sec.appendChild(corps);
-  sec.appendChild(pied);
-  return sec;
+  var liste = el('ol', 'frise');
+  slots.forEach(function(s){
+    var li = el('li', 'etape' + (s.hypothetique ? ' hypo' : ''));
+    li.dataset.med = s.med.id;
+    li.appendChild(el('span', 'heure', hhmm(s.ts)));
+    li.appendChild(el('span', 'quoi', s.med.nom));
+    var r = el('span', 'relatif', relatif(s.ts, t));
+    r.dataset.cible = String(s.ts);
+    r.dataset.format = 'relatif';
+    li.appendChild(r);
+    liste.appendChild(li);
+  });
+  box.appendChild(liste);
+
+  if (slots.some(function(s){ return s.hypothetique; })){
+    box.appendChild(el('p', 'note',
+      'Les horaires en pointillés supposent que la dose disponible est donnée maintenant. Ils se recalculent à chaque prise enregistrée.'));
+  }
+
+  var finis = etats.filter(function(e){ return e.termine; });
+  finis.forEach(function(e){
+    box.appendChild(el('p', 'note',
+      e.med.nom + ' : traitement terminé, dernier jour le ' + dateCourte(e.fin - J) + '.'));
+  });
 }
 
 function libelleJour(ts, t){
@@ -500,7 +547,7 @@ function renduHistorique(prises, t){
   var box = document.getElementById('histo');
   box.textContent = '';
   if (!prises.length){
-    ajoute(box, 'vide', 'Aucune prise enregistrée. La première apparaîtra ici.');
+    box.appendChild(el('p', 'vide', 'Aucune prise enregistrée. La première apparaîtra ici.'));
     return;
   }
   var tri = prises.slice().sort(function(a, b){ return b.ts - a.ts; });
@@ -510,28 +557,17 @@ function renduHistorique(prises, t){
     var lib = libelleJour(p.ts, t);
     if (lib !== jourCourant){
       jourCourant = lib;
-      var h = document.createElement('p');
-      h.className = 'jour'; h.textContent = lib; box.appendChild(h);
+      box.appendChild(el('p', 'jour', lib));
     }
     var def = CONFIG.meds.filter(function(m){ return m.id === p.med; })[0];
-    var ligne = document.createElement('div');
-    ligne.className = 'prise';
-    ligne.innerHTML = '<span class="h"></span><span class="pastille"></span><span class="nom"></span>';
-    ligne.querySelector('.h').textContent = hhmm(p.ts);
-    ligne.querySelector('.pastille').classList.add(p.med);
-    ligne.querySelector('.nom').textContent = def ? def.nom : p.med;
-
-    if (p.hp){
-      var t1 = document.createElement('span');
-      t1.className = 'tag'; t1.textContent = 'hors protocole'; ligne.appendChild(t1);
-    }
-    if (p.enAttente){
-      var t2 = document.createElement('span');
-      t2.className = 'tag enattente'; t2.textContent = 'envoi en cours'; ligne.appendChild(t2);
-    }
+    var ligne = el('div', 'prise');
+    ligne.appendChild(el('span', 'h', hhmm(p.ts)));
+    ligne.appendChild(el('span', 'pastille ' + p.med));
+    ligne.appendChild(el('span', 'nomp', def ? def.nom : p.med));
+    if (p.hp) ligne.appendChild(el('span', 'tag', 'hors protocole'));
+    if (p.enAttente) ligne.appendChild(el('span', 'tag enattente', 'envoi en cours'));
     if (index === 0 && t - p.ts < 10 * 60000){
-      var a = document.createElement('button');
-      a.className = 'annuler'; a.textContent = 'Annuler';
+      var a = el('button', 'annuler', 'Annuler');
       a.onclick = function(){ annule(p.enAttente ? p.cid : p.id, !!p.enAttente); };
       ligne.appendChild(a);
     }
@@ -540,13 +576,15 @@ function renduHistorique(prises, t){
 }
 
 /* Reconstruit tout quand les données changent ; sinon ne rafraîchit que les
-   comptes à rebours, pour ne pas voler le focus à chaque seconde. */
+   compteurs, pour ne pas voler le focus à chaque seconde. */
 function rendu(force){
   var t = now();
   var prises = toutesLesPrises();
   var etats = CONFIG.meds.map(function(m){
     return etatMed(m, prises, t, DEBUT, CONFIG.ecartCroiseH);
   });
+  var slots = planning(etats, t, CONFIG.aVenir).slice(0, CONFIG.aVenir);
+
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
     prises.length,
@@ -555,17 +593,20 @@ function rendu(force){
 
   if (force || signature !== derniereSignature){
     derniereSignature = signature;
-    var box = document.getElementById('meds');
-    box.textContent = '';
-    etats.forEach(function(e){ box.appendChild(blocMed(e)); });
+    renduMaintenant(etats, t);
+    renduEnsuite(etats, slots, t);
     renduHistorique(prises, t);
   } else {
-    var titres = document.querySelectorAll('.med .titre');
-    etats.forEach(function(e, i){
-      if (e.dispo || e.termine) return;
-      var el = titres[i];
-      if (el && el.dataset.compte) el.textContent = duree(e.restant);
-    });
+    tic(t);
+  }
+}
+
+/* Rafraîchit uniquement les compteurs, repérés par data-cible. */
+function tic(t){
+  var cibles = document.querySelectorAll('[data-cible]');
+  for (var i = 0; i < cibles.length; i++){
+    var n = cibles[i], ts = Number(n.dataset.cible);
+    n.textContent = n.dataset.format === 'relatif' ? relatif(ts, t) : duree(ts - t);
   }
 }
 
