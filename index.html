@@ -150,10 +150,10 @@ var CONFIG = {
   debut: '2026-09-14',   // premier jour du traitement
   ecartCroiseH: 0,       // délai imposé ENTRE les deux molécules (0 = aucun)
   meds: [
-    { id:'paracetamol', nom:'Paracétamol',
+    { id:'paracetamol', nom:'Paracétamol', action:'J’ai donné le paracétamol',
       dose:'285 mg — 1 dose-poids 19 kg', detail:'12 mL de suspension 2,4 % (24 mg/mL)',
       intervalleH:6, max24:4, jours:7 },
-    { id:'ibuprofene', nom:'Ibuprofène',
+    { id:'ibuprofene', nom:'Ibuprofène', action:'J’ai donné l’ibuprofène',
       dose:'190 mg — 1 dose-poids 19 kg', detail:'9,5 mL de suspension 2 % (20 mg/mL)',
       intervalleH:8, max24:3, jours:5 }
   ]
@@ -458,7 +458,7 @@ function blocMed(e){
   if (!e.termine && e.dispo){
     var b = document.createElement('button');
     b.className = 'bouton';
-    b.textContent = 'J’ai donné le ' + m.nom.toLowerCase();
+    b.textContent = m.action;
     b.onclick = function(){ b.disabled = true; enregistre(m.id, false); };
     pied.appendChild(b);
   } else if (!e.termine){
