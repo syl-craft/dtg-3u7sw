@@ -300,12 +300,14 @@ var CONFIG = {
           ['Couleur', 'roses, ni pâles, ni blancs, ni bleus'],
           ['Chaleur', 'tièdes, comme ceux de l’autre pied'],
           ['Mobilité', 'Néo les bouge tout seul quand on lui demande'],
+          ['Relèvement', 'il relève les orteils vers le haut, et pas seulement les recroqueviller — c’est ce mouvement-là qui se perd en premier si un nerf est comprimé'],
           ['Sensibilité', 'il les sent quand on les touche, sans fourmillement ni engourdissement'],
           ['Gonflement', 'pas plus gonflés que ceux de l’autre pied'],
           ['Recoloration', 'on appuie sur un ongle jusqu’à ce qu’il blanchisse : il redevient rose en moins de 3 secondes']
         ]},
         { titre:'Le plâtre', points:[
           ['Serrage', 'aucun endroit qui serre, qui appuie ou qui fait mal'],
+          ['Sous le genou', 'aucune douleur ni point qui appuie sur le côté externe de la jambe, juste sous le genou'],
           ['État', 'sec, non fissuré, non ramolli'],
           ['Propreté', 'pas d’odeur inhabituelle ni d’écoulement']
         ]},
@@ -313,6 +315,7 @@ var CONFIG = {
           ['Évolution', 'elle diminue ou reste stable — une douleur qui augmente malgré les antalgiques est un signe d’alerte']
         ]}
       ],
+      note:'Le relèvement des orteils et le point sous le genou visent le plâtre cruropédieux, qui englobe le genou. À faire confirmer au service au prochain contact.',
       conduite:[
         'N’attendez pas le prochain contrôle : appelez tout de suite.',
         'En attendant, surélevez le pied plus haut que le niveau du cœur.',
@@ -841,6 +844,7 @@ function panneauListe(sv){
     liste.appendChild(ul);
   });
   pan.appendChild(liste);
+  if (sv.note) pan.appendChild(el('p', 'note', sv.note));
 
   var duo = el('div', 'duo');
   duo.appendChild(bouton('bouton ok', sv.valide, function(){ enregistreReleve(sv.id, true); }));
