@@ -125,14 +125,18 @@ header .raccourci{
 .pause[data-sujet=temperature] .nom,.pause[data-sujet=temperature] .reste{color:var(--temperature)}
 
 /* ---- température : une valeur, pas une tâche — pas de compte à rebours ---- */
-.saisie{display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap}
-.saisie input[type=number]{
-  font:inherit; font-size:22px; font-weight:800; letter-spacing:-.02em; width:110px;
-  padding:10px 12px; min-height:52px; border:1px solid var(--line); border-radius:4px;
+/* align-items:stretch pour que le champ et le bouton fassent exactement la
+   meme hauteur. Le selecteur vise `input` tout court : le champ est en
+   type=text (inputmode decimal) pour accepter la virgule du clavier francais. */
+.saisie{display:flex; gap:8px; align-items:stretch; margin-top:12px; flex-wrap:wrap}
+.saisie input{
+  font:inherit; font-size:21px; font-weight:800; letter-spacing:-.02em;
+  flex:none; width:118px; padding:0 14px; min-height:54px;
+  border:1px solid var(--line); border-radius:4px;
   background:var(--paper); color:var(--ink);
 }
-.saisie .unite{font-size:18px; font-weight:700; color:var(--muted); margin-left:-2px}
-.saisie .btn{flex:1; min-width:130px}
+.saisie .unite{display:flex; align-items:center; font-size:18px; font-weight:700; color:var(--muted)}
+.saisie .btn{flex:1; min-width:140px; min-height:54px}
 .contexte{margin:8px 0 0; font-size:14px; color:var(--muted)}
 .rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
 .pause.arretee{border-left-color:var(--line)}
@@ -639,22 +643,29 @@ var distant = { prises: {}, controles: {}, temperatures: {}, reglages: {} };
 /* Sections repliables. Repliees par defaut ; l'etat est propre a l'appareil,
    pas partage — chacun ouvre ce qu'il consulte. */
 var SECTIONS = ['surveillance', 'meds', 'ensuite', 'histo', 'tel'];
+var DEFAUTS = { surveillance: false, meds: false, ensuite: true, histo: true, tel: false };
 var ouvertes = {};
 try { ouvertes = JSON.parse(localStorage.getItem('sections') || '{}') || {}; } catch (e) { ouvertes = {}; }
+
+/* Une section jamais touchée sur cet appareil suit le défaut ; dès qu'on la
+   bascule, c'est le choix mémorisé qui prime. */
+function estOuverte(id){
+  return Object.prototype.hasOwnProperty.call(ouvertes, id) ? !!ouvertes[id] : !!DEFAUTS[id];
+}
 
 function appliqueSections(){
   SECTIONS.forEach(function(id){
     var btn = document.querySelector('.section[data-sec="' + id + '"]');
     var bloc = document.getElementById('bloc-' + id);
     if (!btn || !bloc) return;
-    var o = !!ouvertes[id];
+    var o = estOuverte(id);
     btn.setAttribute('aria-expanded', o ? 'true' : 'false');
     bloc.hidden = !o;
   });
 }
 
 function basculeSection(id){
-  ouvertes[id] = !ouvertes[id];
+  ouvertes[id] = !estOuverte(id);
   try { localStorage.setItem('sections', JSON.stringify(ouvertes)); } catch (e) {}
   appliqueSections();
 }
@@ -1585,7 +1596,7 @@ document.querySelectorAll('.section[data-sec]').forEach(function(btn){
 
 /* Le raccourci « Qui appeler » doit ouvrir la section, pas seulement y sauter. */
 document.querySelector('header .raccourci').addEventListener('click', function(){
-  if (!ouvertes.tel) basculeSection('tel');
+  if (!estOuverte('tel')) basculeSection('tel');
 });
 
 (async function(){
