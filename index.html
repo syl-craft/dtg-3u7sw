@@ -351,10 +351,10 @@ var CONFIG = {
   joursSaisie: 3,        // profondeur du sélecteur de jour (aujourd'hui inclus)
 
   meds: [
-    { id:'paracetamol', nom:'Paracétamol', action:'J’ai donné le paracétamol',
+    { id:'paracetamol', nom:'Paracétamol', action:'J’ai donné le paracétamol', de:'de paracétamol',
       dose:'285 mg — 1 dose-poids 19 kg', detail:'12 mL de suspension 2,4 % (24 mg/mL)',
       intervalleH:6, max24:4, jours:7 },
-    { id:'ibuprofene', nom:'Ibuprofène', action:'J’ai donné l’ibuprofène',
+    { id:'ibuprofene', nom:'Ibuprofène', action:'J’ai donné l’ibuprofène', de:'d’ibuprofène',
       dose:'190 mg — 1 dose-poids 19 kg', detail:'9,5 mL de suspension 2 % (20 mg/mL)',
       intervalleH:8, max24:3, jours:5 }
   ],
@@ -894,6 +894,13 @@ function nomMed(id){
   return m ? m.nom : id;
 }
 
+/* « de paracétamol » mais « d'ibuprofène » : l'élision est portée par la
+   config, pas devinée à partir du nom. */
+function articleMed(id){
+  var m = CONFIG.meds.filter(function(x){ return x.id === id; })[0];
+  return m && m.de ? m.de : 'de ' + nomMed(id).toLowerCase();
+}
+
 function el(tag, cls, texte){
   var n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -1177,7 +1184,7 @@ function renduTemperature(temps, prises, t){
       + ' · ' + liste.filter(function(x){ return x.ts > t - J; }).length + ' en 24 h'));
     var ctx = contexteAntipyretique(dernier.ts, prises, cfg.fenetreAntipyretiqueH);
     p.appendChild(el('p', 'contexte', ctx
-      ? 'Mesurée ' + duree(ctx.ecart) + ' après une dose de ' + nomMed(ctx.med).toLowerCase()
+      ? 'Mesurée ' + duree(ctx.ecart) + ' après une dose ' + articleMed(ctx.med)
         + ', qui fait baisser la fièvre : la valeur est minorée.'
       : 'Mesurée à distance de tout antalgique.'));
   } else {
