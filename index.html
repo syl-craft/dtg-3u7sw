@@ -1216,22 +1216,16 @@ function renduTelephones(){
 }
 
 /* ---- médicaments ---- */
-/* Deux lignes de repères temporels : où en est le traitement selon qu'on
-   compte depuis l'ordonnance ou depuis la première prise réellement donnée. */
+/* Repères temporels, comptés depuis la première prise réellement donnée :
+   c'est elle qui fait foi, pas la date de l'ordonnance. */
 function lignesJours(m, prises, t){
   var c = compteurJours(m, prises, t, ORDONNANCE);
-  var compte = 'J' + c.jourOrdonnance + ' depuis l’ordonnance du ' + dateCourte(ORDONNANCE);
-  if (c.premiere){
-    compte += ' · J' + c.jourPremiere + ' depuis la 1re prise du '
-      + dateCourte(c.premiere.ts) + ' à ' + hhmm(c.premiere.ts);
-  }
-  compte += ' · ' + m.jours + ' jours prescrits';
-
-  var fin = 'Dernier jour : ' + dateCourte(c.finOrdonnance - J) + ' en comptant depuis l’ordonnance';
-  fin += c.premiere
-    ? ', ' + dateCourte(c.finPremiere - J) + ' depuis la 1re prise'
-    : '';
-  return [compte, fin];
+  if (!c.premiere) return ['Aucune prise enregistrée · ' + m.jours + ' jours prescrits'];
+  return [
+    'Jour ' + c.jourPremiere + ' sur ' + m.jours
+      + ' — 1re prise le ' + dateCourte(c.premiere.ts) + ' à ' + hhmm(c.premiere.ts),
+    'Dernier jour : ' + dateCourte(c.finPremiere - J)
+  ];
 }
 
 function renduMaintenant(etats, prises, t){
