@@ -49,8 +49,31 @@ header .raccourci{
   text-decoration:underline; text-underline-offset:3px;
 }
 
-.section{margin:30px 0 12px; font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-.section:first-of-type{margin-top:22px}
+/* ---- sections repliables : repliees par defaut, le resume porte l'essentiel ---- */
+.section{
+  display:flex; align-items:baseline; gap:10px; width:100%; text-align:left;
+  margin:16px 0 0; padding:13px 0 13px 22px; position:relative;
+  background:none; border:0; border-top:1px solid var(--line);
+  font:inherit; font-size:13px; font-weight:800; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--muted); cursor:pointer;
+}
+.section .t{flex:none}
+.section .r{
+  flex:1; text-align:right; text-transform:none; letter-spacing:0;
+  font-size:14.5px; font-weight:600; color:var(--ink); line-height:1.3;
+}
+.section .r b{font-weight:800}
+.section .r .du{color:var(--alert)}
+.section::before{
+  content:''; position:absolute; left:3px; top:50%; margin-top:-5px;
+  width:0; height:0; border-left:7px solid var(--muted);
+  border-top:5px solid transparent; border-bottom:5px solid transparent;
+  transition:transform .15s ease;
+}
+.section[aria-expanded=true]::before{transform:rotate(90deg)}
+.section[aria-expanded=true]{color:var(--ink)}
+.section[aria-expanded=true] .r{display:none}
+.contenu{padding:14px 0 6px}
 
 #bandeau{
   display:none; margin:14px 0 0; padding:12px 14px; border-radius:4px;
@@ -112,6 +135,10 @@ header .raccourci{
 .saisie .btn{flex:1; min-width:130px}
 .contexte{margin:8px 0 0; font-size:14px; color:var(--muted)}
 .rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
+.pause.arretee{border-left-color:var(--line)}
+.pause.arretee .nom,.pause.arretee .reste{color:var(--muted)}
+.pause.arretee .reste{font-size:19px}
+.pause.arretee .btn{margin-top:10px}
 
 .lien{
   display:inline-block; margin-top:8px; background:none; border:0; padding:6px 0;
@@ -265,21 +292,41 @@ footer strong{color:var(--ink)}
 
   <div id="bandeau" role="alert"></div>
 
-  <h2 class="section">Surveillance</h2>
-  <div id="surveillance"></div>
-  <div id="temperature"></div>
+  <button type="button" class="section" data-sec="surveillance" aria-controls="bloc-surveillance">
+    <span class="t">Surveillance</span><span class="r"></span>
+  </button>
+  <div class="contenu" id="bloc-surveillance" hidden>
+    <div id="surveillance"></div>
+    <div id="temperature"></div>
+  </div>
 
-  <h2 class="section">Médicaments maintenant</h2>
-  <div id="maintenant"></div>
+  <button type="button" class="section" data-sec="meds" aria-controls="bloc-meds">
+    <span class="t">Médicaments</span><span class="r"></span>
+  </button>
+  <div class="contenu" id="bloc-meds" hidden>
+    <div id="maintenant"></div>
+  </div>
 
-  <h2 class="section">Ensuite</h2>
-  <div id="ensuite"></div>
+  <button type="button" class="section" data-sec="ensuite" aria-controls="bloc-ensuite">
+    <span class="t">Ensuite</span><span class="r"></span>
+  </button>
+  <div class="contenu" id="bloc-ensuite" hidden>
+    <div id="ensuite"></div>
+  </div>
 
-  <h2 class="section">Historique</h2>
-  <div id="histo"></div>
+  <button type="button" class="section" data-sec="histo" aria-controls="bloc-histo">
+    <span class="t">Historique</span><span class="r"></span>
+  </button>
+  <div class="contenu" id="bloc-histo" hidden>
+    <div id="histo"></div>
+  </div>
 
-  <h2 class="section" id="appeler">Qui appeler</h2>
-  <div id="telephones"></div>
+  <button type="button" class="section" id="appeler" data-sec="tel" aria-controls="bloc-tel">
+    <span class="t">Qui appeler</span><span class="r"></span>
+  </button>
+  <div class="contenu" id="bloc-tel" hidden>
+    <div id="telephones"></div>
+  </div>
 
   <footer>
     <p>Les deux comptes à rebours des médicaments sont indépendants. Aucun délai n'est imposé entre paracétamol et ibuprofène&nbsp;: ils peuvent être donnés ensemble pour renforcer l'effet antalgique. L'ibuprofène se donne <strong>avec quelque chose à manger</strong>, et le flacon se <strong>secoue avant chaque prise</strong>.</p>
@@ -293,6 +340,7 @@ footer strong{color:var(--ink)}
    Réglages — tout ce qui peut changer sur avis médical est ici.
    ======================================================================= */
 var CONFIG = {
+  ordonnance: '2026-09-14',  // date de l'ordonnance : premier point de départ possible
   debut: '2026-09-15',   // premier jour du traitement (première prise à 11 h)
   ecartCroiseH: 0,       // délai imposé ENTRE les deux molécules (0 = aucun)
   aVenir: 6,             // nombre de créneaux affichés dans le planning
@@ -398,6 +446,31 @@ function relatif(ts, t){ return ts - t <= 0 ? 'maintenant' : 'dans ' + duree(ts 
 function finTraitement(debutMs, jours){ return debutMs + jours * J; }
 function jourTraitement(t, debutMs){ return Math.floor((t - debutMs) / J) + 1; }
 
+/* Minuit du jour auquel appartient cet instant. */
+function jourZero(ts){
+  var d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/* « Jour N sur X » compté depuis deux origines distinctes : la date de
+   l'ordonnance, et la première prise réellement enregistrée. Les deux ne
+   coïncident pas forcément, et la durée prescrite se compte à partir de
+   l'une ou de l'autre — autant montrer les deux plutôt que trancher. */
+function compteurJours(med, prises, t, ordonnanceMs){
+  var liste = prises.filter(function(p){ return p.med === med.id; })
+                    .sort(function(a, b){ return a.ts - b.ts; });
+  var premiere = liste[0] || null;
+  var origine = premiere ? jourZero(premiere.ts) : null;
+  return {
+    premiere: premiere,
+    jourOrdonnance: Math.max(1, jourTraitement(t, ordonnanceMs)),
+    jourPremiere: origine ? Math.max(1, jourTraitement(t, origine)) : null,
+    finOrdonnance: finTraitement(ordonnanceMs, med.jours),
+    finPremiere: origine ? finTraitement(origine, med.jours) : null
+  };
+}
+
 /* Combine « il y a N jours » et « HH:MM » en un instant précis. */
 function tsDepuis(joursEnArriere, heure, t){
   var d = new Date(t);
@@ -501,12 +574,20 @@ function contexteAntipyretique(ts, prises, fenetreH){
    datent d'avant l'ajout de la position et concernent le plâtre.
    Une surveillance dotée d'une fenêtre `nuit` se met en pause dedans :
    on ne réveille pas Néo pour le changer de position. */
-function etatSurveillance(sv, releves, t){
+function etatSurveillance(sv, releves, t, reglage){
   var list = releves.filter(function(c){ return (c.quoi || 'platre') === sv.id; })
                     .sort(function(a, b){ return b.ts - a.ts; });
   var dernier = list[0] || null;
-  var prochain = dernier ? dernier.ts + sv.intervalleH * H : t;
+  var nb24 = list.filter(function(c){ return c.ts > t - J; }).length;
+  var arretee = !!(reglage && reglage.actif === false);
 
+  if (arretee){
+    return { sv: sv, dernier: dernier, prochain: 0, du: false, nuit: false,
+             arretee: true, arreteeLe: reglage.ts || null,
+             anomalie: false, restant: 0, nb24: nb24 };
+  }
+
+  var prochain = dernier ? dernier.ts + sv.intervalleH * H : t;
   var nuit = !!(sv.nuit && estNuit(t, sv.nuit.de, sv.nuit.a));
   if (nuit) prochain = Math.max(prochain, prochaineHeure(t, sv.nuit.a));
 
@@ -516,9 +597,10 @@ function etatSurveillance(sv, releves, t){
     prochain: prochain,
     du: !nuit && (!dernier || t >= prochain),
     nuit: nuit,
+    arretee: false,
     anomalie: !!(dernier && dernier.ok === false),
     restant: Math.max(0, prochain - t),
-    nb24: list.filter(function(c){ return c.ts > t - J; }).length
+    nb24: nb24
   };
 }
 /* ---- LOGIQUE PURE (fin) ---- */
@@ -551,7 +633,44 @@ async function caleHorloge(){
    Données — deux nœuds : les prises et les relevés de surveillance.
    ======================================================================= */
 var DEBUT = new Date(CONFIG.debut + 'T00:00:00').getTime();
-var distant = { prises: {}, controles: {}, temperatures: {} };
+var ORDONNANCE = new Date(CONFIG.ordonnance + 'T00:00:00').getTime();
+var distant = { prises: {}, controles: {}, temperatures: {}, reglages: {} };
+
+/* Sections repliables. Repliees par defaut ; l'etat est propre a l'appareil,
+   pas partage — chacun ouvre ce qu'il consulte. */
+var SECTIONS = ['surveillance', 'meds', 'ensuite', 'histo', 'tel'];
+var ouvertes = {};
+try { ouvertes = JSON.parse(localStorage.getItem('sections') || '{}') || {}; } catch (e) { ouvertes = {}; }
+
+function appliqueSections(){
+  SECTIONS.forEach(function(id){
+    var btn = document.querySelector('.section[data-sec="' + id + '"]');
+    var bloc = document.getElementById('bloc-' + id);
+    if (!btn || !bloc) return;
+    var o = !!ouvertes[id];
+    btn.setAttribute('aria-expanded', o ? 'true' : 'false');
+    bloc.hidden = !o;
+  });
+}
+
+function basculeSection(id){
+  ouvertes[id] = !ouvertes[id];
+  try { localStorage.setItem('sections', JSON.stringify(ouvertes)); } catch (e) {}
+  appliqueSections();
+}
+
+function majResumes(resumes){
+  SECTIONS.forEach(function(id){
+    var cible = document.querySelector('.section[data-sec="' + id + '"] .r');
+    if (!cible) return;
+    cible.textContent = '';
+    (resumes[id] || []).forEach(function(bout, i){
+      if (i) cible.appendChild(document.createTextNode(' · '));
+      var s = el('span', bout.urgent ? 'du' : '', bout.texte);
+      cible.appendChild(s);
+    });
+  });
+}
 var attente = JSON.parse(localStorage.getItem('attente') || '[]');
 var derniereSignature = '';
 
@@ -594,6 +713,28 @@ function lesPrises(){ return entrees('prise').filter(function(p){ return !!p.med
 function lesReleves(){ return entrees('releve'); }
 function lesTemperatures(){
   return entrees('temperature').filter(function(x){ return typeof x.valeur === 'number'; });
+}
+function reglageDe(id){ return (distant.reglages || {})[id] || null; }
+
+/* Arret ou reprise d'une surveillance. Partage : si un parent arrete le suivi
+   du platre, l'ecole cesse d'etre relancee elle aussi. */
+async function changeSurveillance(id, actif){
+  fermeUi();
+  var avant = distant.reglages[id];
+  var valeur = { actif: actif, ts: now() };
+  distant.reglages[id] = valeur;
+  rendu(true);
+  try{
+    var res = await fetch(BASE + '/reglages/' + id + '.json', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(valeur)
+    });
+    if (!res.ok) throw new Error(res.status);
+  }catch(e){
+    if (avant) distant.reglages[id] = avant; else delete distant.reglages[id];
+    rendu(true);
+    alerte('Le changement n’est pas passé. Vérifiez le réseau et réessayez.', true);
+  }
 }
 
 /* =======================================================================
@@ -727,6 +868,7 @@ async function recharge(){
     distant.prises = (await (await fetch(BASE + '/prises.json')).json()) || {};
     distant.controles = (await (await fetch(BASE + '/controles.json')).json()) || {};
     distant.temperatures = (await (await fetch(BASE + '/temperatures.json')).json()) || {};
+    distant.reglages = (await (await fetch(BASE + '/reglages.json')).json()) || {};
     majBandeau(); rendu(true);
   }catch(e){ majBandeau(); }
 }
@@ -867,7 +1009,25 @@ function renduSurveillance(etatsSv, t){
     var sv = es.sv;
 
     if (ui.surv === sv.id && ui.survMode === 'alerte'){ box.appendChild(panneauAlerte(sv)); return; }
-    if (ui.surv === sv.id){ box.appendChild(panneauListe(sv)); return; }
+    if (ui.surv === sv.id && ui.survMode === 'arret'){ box.appendChild(panneauArret(sv, es)); return; }
+    if (ui.surv === sv.id){ box.appendChild(panneauListe(sv, es)); return; }
+
+    if (es.arretee){
+      var stop = el('div', 'pause arretee');
+      stop.dataset.sujet = sv.id;
+      var hautS = el('div', 'haut');
+      hautS.appendChild(el('span', 'nom', sv.nom));
+      hautS.appendChild(el('span', 'reste', 'arrêtée'));
+      stop.appendChild(hautS);
+      stop.appendChild(el('p', 'quand', 'Surveillance arrêtée'
+        + (es.arreteeLe ? ' le ' + dateCourte(es.arreteeLe) + ' à ' + hhmm(es.arreteeLe) : '')
+        + '. Plus aucun rappel, pour personne.'));
+      stop.appendChild(bouton('btn secondaire', 'Reprendre la surveillance', function(){
+        changeSurveillance(sv.id, true);
+      }));
+      box.appendChild(stop);
+      return;
+    }
 
     if (es.anomalie){
       var al = el('div', 'alarme');
@@ -922,7 +1082,20 @@ function renduSurveillance(etatsSv, t){
   });
 }
 
-function panneauListe(sv){
+function panneauArret(sv, es){
+  var pan = el('div', 'panneau');
+  pan.dataset.sujet = sv.id;
+  pan.appendChild(el('p', 'quoi', sv.nom));
+  pan.appendChild(el('p', 'erreur',
+    'Arrêter cette surveillance ? Elle disparaît pour tout le monde, école comprise, et plus rien ne la rappellera. Réversible à tout moment.'));
+  var row = el('div', 'champs');
+  row.appendChild(bouton('btn danger', 'Arrêter', function(){ changeSurveillance(sv.id, false); }));
+  row.appendChild(bouton('btn secondaire', 'Annuler', function(){ ui.survMode = null; rendu(true); }));
+  pan.appendChild(row);
+  return pan;
+}
+
+function panneauListe(sv, es){
   var pan = el('div', 'panneau');
   pan.dataset.sujet = sv.id;
   pan.appendChild(el('p', 'quoi', sv.intro));
@@ -951,6 +1124,12 @@ function panneauListe(sv){
   }
   pan.appendChild(duo);
   pan.appendChild(bouton('lien', 'Fermer', function(){ fermeUi(); rendu(true); }));
+
+  var arret = el('div', 'supprimer');
+  arret.appendChild(bouton('lien', 'Arrêter cette surveillance', function(){
+    ui.survMode = 'arret'; rendu(true);
+  }));
+  pan.appendChild(arret);
   return pan;
 }
 
@@ -1013,10 +1192,27 @@ function renduTelephones(){
 }
 
 /* ---- médicaments ---- */
-function renduMaintenant(etats, t){
+/* Deux lignes de repères temporels : où en est le traitement selon qu'on
+   compte depuis l'ordonnance ou depuis la première prise réellement donnée. */
+function lignesJours(m, prises, t){
+  var c = compteurJours(m, prises, t, ORDONNANCE);
+  var compte = 'J' + c.jourOrdonnance + ' depuis l’ordonnance du ' + dateCourte(ORDONNANCE);
+  if (c.premiere){
+    compte += ' · J' + c.jourPremiere + ' depuis la 1re prise du '
+      + dateCourte(c.premiere.ts) + ' à ' + hhmm(c.premiere.ts);
+  }
+  compte += ' · ' + m.jours + ' jours prescrits';
+
+  var fin = 'Dernier jour : ' + dateCourte(c.finOrdonnance - J) + ' en comptant depuis l’ordonnance';
+  fin += c.premiere
+    ? ', ' + dateCourte(c.finPremiere - J) + ' depuis la 1re prise'
+    : '';
+  return [compte, fin];
+}
+
+function renduMaintenant(etats, prises, t){
   var box = document.getElementById('maintenant');
   box.textContent = '';
-  var jour = Math.max(jourTraitement(t, DEBUT), 1);
   var actifs = etats.filter(function(e){ return !e.termine; });
 
   if (!actifs.length){
@@ -1034,7 +1230,8 @@ function renduMaintenant(etats, t){
       c.dataset.sujet = m.id;
       c.appendChild(el('h3', '', m.nom));
       c.appendChild(el('p', 'dose', m.dose));
-      c.appendChild(el('p', 'detail', m.detail + ' — jour ' + Math.min(jour, m.jours) + ' sur ' + m.jours));
+      c.appendChild(el('p', 'detail', m.detail));
+      lignesJours(m, prises, t).forEach(function(l){ c.appendChild(el('p', 'detail', l)); });
       var b = el('button', 'bouton', m.action);
       b.onclick = function(){ b.disabled = true; enregistrePrise(m.id, false); };
       c.appendChild(b);
@@ -1059,6 +1256,7 @@ function renduMaintenant(etats, t){
         : 'Possible à ' + hhmm(e.dispoA)
           + (e.derniere ? ', dernière prise à ' + hhmm(e.derniere.ts) : '');
     p.appendChild(el('p', 'quand', motif + ' · ' + e.nb24 + ' sur ' + m.max24 + ' prises en 24 h'));
+    lignesJours(m, prises, t).forEach(function(l){ p.appendChild(el('p', 'quand', l)); });
 
     if (ui.horsProto === m.id){
       var box2 = el('div', 'confirm');
@@ -1288,6 +1486,44 @@ function renduHistorique(tout, t){
   }
 }
 
+/* Ce que chaque section replièe affiche : juste assez pour ne pas avoir à
+   l'ouvrir. Les entrées urgentes sont marquees pour ressortir en couleur. */
+function resumes(etats, etatsSv, temps, slots, tout, t){
+  var r = { surveillance: [], meds: [], ensuite: [], histo: [], tel: [] };
+
+  etatsSv.forEach(function(es){
+    var nom = es.sv.id === 'platre' ? 'Plâtre' : 'Position';
+    if (es.arretee)      r.surveillance.push({ texte: nom + ' arrêté' });
+    else if (es.anomalie) r.surveillance.push({ texte: nom + ' anomalie', urgent: true });
+    else if (es.du)       r.surveillance.push({ texte: nom + ' à faire', urgent: true });
+    else if (es.nuit)     r.surveillance.push({ texte: nom + ' nuit' });
+    else                  r.surveillance.push({ texte: nom + ' ' + duree(es.restant) });
+  });
+  var derniereTemp = temps.slice().sort(function(a, b){ return b.ts - a.ts; })[0];
+  if (derniereTemp) r.surveillance.push({ texte: formatTemp(derniereTemp.valeur) });
+
+  etats.forEach(function(e){
+    var nom = e.med.nom;
+    if (e.termine)    r.meds.push({ texte: nom + ' terminé' });
+    else if (e.dispo) r.meds.push({ texte: nom + ' à donner', urgent: true });
+    else              r.meds.push({ texte: nom + ' ' + duree(e.restant) });
+  });
+
+  if (slots.length) r.ensuite.push({ texte: hhmm(slots[0].ts) + ' ' + slots[0].med.nom });
+
+  if (tout.length){
+    var recent = tout.slice().sort(function(a, b){ return b.ts - a.ts; })[0];
+    r.histo.push({ texte: tout.length + ' enregistrements' });
+    r.histo.push({ texte: 'dernier à ' + hhmm(recent.ts) });
+  } else {
+    r.histo.push({ texte: 'vide' });
+  }
+
+  r.tel.push({ texte: 'SAMU 15' });
+  r.tel.push({ texte: 'service 01 30 75 47 80' });
+  return r;
+}
+
 /* Reconstruit tout quand les données ou l'interface changent ; sinon ne
    rafraîchit que les compteurs, pour ne pas voler le focus à chaque seconde. */
 function rendu(force){
@@ -1298,13 +1534,17 @@ function rendu(force){
     return etatMed(m, prises, t, DEBUT, CONFIG.ecartCroiseH);
   });
   var slots = planning(etats, t, CONFIG.aVenir).slice(0, CONFIG.aVenir);
-  var etatsSv = CONFIG.surveillances.map(function(sv){ return etatSurveillance(sv, releves, t); });
+  var etatsSv = CONFIG.surveillances.map(function(sv){
+    return etatSurveillance(sv, releves, t, reglageDe(sv.id));
+  });
   var temps = lesTemperatures();
   var tout = prises.concat(releves).concat(temps);
 
+  majResumes(resumes(etats, etatsSv, temps, slots, tout, t));
+
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
-    etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24, es.nuit]; }),
+    etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24, es.nuit, es.arretee]; }),
     tout.map(function(e){ return cle(e) + ':' + e.ts + ':' + (e.valeur === undefined ? '' : e.valeur); }).sort(),
     [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode,
      ui.erreur, ui.erreurTemp, ui.form.sujet]
@@ -1314,7 +1554,7 @@ function rendu(force){
     derniereSignature = signature;
     renduSurveillance(etatsSv, t);
     renduTemperature(temps, prises, t);
-    renduMaintenant(etats, t);
+    renduMaintenant(etats, prises, t);
     renduEnsuite(etats, slots, etatsSv, t);
     renduHistorique(tout, t);
   } else {
@@ -1339,7 +1579,17 @@ document.addEventListener('visibilitychange', function(){
   if (!document.hidden){ recharge(); videFile(); }
 });
 
+document.querySelectorAll('.section[data-sec]').forEach(function(btn){
+  btn.addEventListener('click', function(){ basculeSection(btn.dataset.sec); });
+});
+
+/* Le raccourci « Qui appeler » doit ouvrir la section, pas seulement y sauter. */
+document.querySelector('header .raccourci').addEventListener('click', function(){
+  if (!ouvertes.tel) basculeSection('tel');
+});
+
 (async function(){
+  appliqueSections();
   renduTelephones();
   rendu(true);
   await caleHorloge();
@@ -1347,6 +1597,7 @@ document.addEventListener('visibilitychange', function(){
   ecoute('prises');
   ecoute('controles');
   ecoute('temperatures');
+  ecoute('reglages');
   videFile();
   setInterval(function(){ rendu(false); }, 1000);
   setInterval(videFile, 10000);
