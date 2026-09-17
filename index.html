@@ -14,6 +14,7 @@
   --ibuprofene:#7A2E5C;
   --platre:#3C4A5A;
   --position:#8A5A14;
+  --temperature:#40407A;
   --alert:#B3261E; --alert-pale:#FBE9E7;
 }
 @media (prefers-color-scheme:dark){
@@ -23,6 +24,7 @@
     --ibuprofene:#C87BA4;
     --platre:#93A4B8;
     --position:#D2A055;
+    --temperature:#9A9AD8;
     --alert:#F2827A; --alert-pale:#2C1613;
   }
 }
@@ -96,6 +98,19 @@ header .raccourci{
 .pause .reste{font-size:26px; font-weight:800; letter-spacing:-.02em; white-space:nowrap}
 .pause .quand{margin:2px 0 0; font-size:14.5px; color:var(--muted)}
 .pause .rappel{margin:8px 0 0; font-size:14.5px; font-weight:600}
+.pause[data-sujet=temperature]{border-left:7px solid var(--temperature)}
+.pause[data-sujet=temperature] .nom,.pause[data-sujet=temperature] .reste{color:var(--temperature)}
+
+/* ---- température : une valeur, pas une tâche — pas de compte à rebours ---- */
+.saisie{display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap}
+.saisie input[type=number]{
+  font:inherit; font-size:22px; font-weight:800; letter-spacing:-.02em; width:110px;
+  padding:10px 12px; min-height:52px; border:1px solid var(--line); border-radius:4px;
+  background:var(--paper); color:var(--ink);
+}
+.saisie .unite{font-size:18px; font-weight:700; color:var(--muted); margin-left:-2px}
+.saisie .btn{flex:1; min-width:130px}
+.contexte{margin:8px 0 0; font-size:14px; color:var(--muted)}
 .rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
 
 .lien{
@@ -161,6 +176,7 @@ header .raccourci{
 .prise .pastille.ibuprofene{background:var(--ibuprofene)}
 .prise .pastille.platre{background:var(--platre); border-radius:2px}
 .prise .pastille.position{background:var(--position); border-radius:2px}
+.prise .pastille.temperature{background:var(--temperature); border-radius:2px}
 .prise .pastille.anomalie{background:var(--alert); border-radius:2px}
 .prise .nomp{flex:1; font-size:16px}
 .prise .tag{font-size:12px; font-weight:700; color:var(--alert); border:1px solid var(--alert); border-radius:3px; padding:2px 6px}
@@ -180,6 +196,7 @@ header .raccourci{
 .panneau[data-sujet=ibuprofene]{border-left-color:var(--ibuprofene)}
 .panneau[data-sujet=platre]{border-left-color:var(--platre)}
 .panneau[data-sujet=position]{border-left-color:var(--position)}
+.panneau[data-sujet=temperature]{border-left-color:var(--temperature)}
 .panneau .quoi{margin:0 0 11px; font-size:14px; font-weight:700; color:var(--muted)}
 .champs{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
 .panneau select,.panneau input[type=time]{
@@ -202,6 +219,7 @@ header .raccourci{
 .choixmed button[data-sujet=ibuprofene].actif{border-color:var(--ibuprofene); background:var(--ibuprofene); color:#fff}
 .choixmed button[data-sujet=platre].actif{border-color:var(--platre); background:var(--platre); color:#fff}
 .choixmed button[data-sujet=position].actif{border-color:var(--position); background:var(--position); color:#fff}
+.choixmed button[data-sujet=temperature].actif{border-color:var(--temperature); background:var(--temperature); color:#fff}
 .erreur{margin:10px 0 0; font-size:14px; color:var(--alert); font-weight:600}
 .supprimer{margin-top:12px; padding-top:11px; border-top:1px solid var(--line)}
 .ajouter{margin-top:16px}
@@ -249,6 +267,7 @@ footer strong{color:var(--ink)}
 
   <h2 class="section">Surveillance</h2>
   <div id="surveillance"></div>
+  <div id="temperature"></div>
 
   <h2 class="section">Médicaments maintenant</h2>
   <div id="maintenant"></div>
@@ -340,6 +359,13 @@ var CONFIG = {
       ]
     }
   ],
+
+  /* La température porte une valeur, pas un « c'est fait » : pas de rythme
+     imposé, pas de seuil, pas d'alerte — l'app enregistre et affiche. */
+  temperature: {
+    nom:'Température', min:34, max:43, pas:0.1,
+    fenetreAntipyretiqueH:6   // au-delà, l'effet du paracétamol ou de l'ibuprofène est passé
+  },
 
   telephones: [
     { num:'15', tel:'15', qui:'Urgences — SAMU',
@@ -453,6 +479,23 @@ function prochaineHeure(t, heure){
   return d.getTime();
 }
 
+/* Une température se lit à la virgule, pas au point. */
+function formatTemp(v){
+  return (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' °C';
+}
+
+/* Dose d'antipyrétique en vigueur au moment d'une mesure. Paracétamol et
+   ibuprofène font tous deux baisser la fièvre : une température prise peu
+   après une dose est artificiellement basse, et il faut le savoir pour la lire. */
+function contexteAntipyretique(ts, prises, fenetreH){
+  var avant = prises.filter(function(p){ return p.ts <= ts; })
+                    .sort(function(a, b){ return b.ts - a.ts; });
+  if (!avant.length) return null;
+  var ecart = ts - avant[0].ts;
+  if (ecart > fenetreH * H) return null;
+  return { med: avant[0].med, ecart: ecart };
+}
+
 /* État d'une surveillance récurrente (plâtre, position). Tant que rien n'a
    été enregistré, elle est due. Les enregistrements sans champ `quoi`
    datent d'avant l'ajout de la position et concernent le plâtre.
@@ -508,28 +551,32 @@ async function caleHorloge(){
    Données — deux nœuds : les prises et les relevés de surveillance.
    ======================================================================= */
 var DEBUT = new Date(CONFIG.debut + 'T00:00:00').getTime();
-var distant = { prises: {}, controles: {} };
+var distant = { prises: {}, controles: {}, temperatures: {} };
 var attente = JSON.parse(localStorage.getItem('attente') || '[]');
 var derniereSignature = '';
 
 var ui = { ligne: null, mode: null, ajout: false, horsProto: null,
-           surv: null, survMode: null, erreur: '',
-           form: { sujet: 'paracetamol', jour: 0, heure: '12:00' } };
+           surv: null, survMode: null, erreur: '', erreurTemp: '',
+           form: { sujet: 'paracetamol', jour: 0, heure: '12:00', valeur: '' },
+           saisieTemp: '' };
 
 function fermeUi(){
   ui.ligne = null; ui.mode = null; ui.ajout = false;
-  ui.horsProto = null; ui.surv = null; ui.survMode = null; ui.erreur = '';
+  ui.horsProto = null; ui.surv = null; ui.survMode = null;
+  ui.erreur = ''; ui.erreurTemp = '';
 }
+
+var NOEUDS = { prise: 'prises', releve: 'controles', temperature: 'temperatures' };
 
 function sauveAttente(){ localStorage.setItem('attente', JSON.stringify(attente)); }
 function cle(e){ return e.enAttente ? e.cid : e.id; }
-function noeud(e){ return e.type === 'releve' ? 'controles' : 'prises'; }
+function noeud(e){ return NOEUDS[e.type] || 'prises'; }
 function svParId(id){
   return CONFIG.surveillances.filter(function(s){ return s.id === id; })[0] || null;
 }
 
 function entrees(type){
-  var n = type === 'releve' ? 'controles' : 'prises';
+  var n = NOEUDS[type] || 'prises';
   var src = distant[n] || {};
   var cids = {};
   Object.keys(src).forEach(function(k){ if (src[k] && src[k].cid) cids[src[k].cid] = 1; });
@@ -545,6 +592,9 @@ function entrees(type){
 
 function lesPrises(){ return entrees('prise').filter(function(p){ return !!p.med; }); }
 function lesReleves(){ return entrees('releve'); }
+function lesTemperatures(){
+  return entrees('temperature').filter(function(x){ return typeof x.valeur === 'number'; });
+}
 
 /* =======================================================================
    Écriture — tout part d'abord en file locale : un clic n'est jamais perdu.
@@ -563,10 +613,16 @@ function enregistreReleve(quoi, toutVaBien, quand){
   sauveAttente(); fermeUi(); rendu(true); videFile();
 }
 
+function enregistreTemperature(valeur, quand){
+  attente.push({ cid: nouvelleCle(), type: 'temperature',
+                 ts: quand === undefined ? now() : quand, valeur: valeur });
+  sauveAttente(); ui.saisieTemp = ''; fermeUi(); rendu(true); videFile();
+}
+
 function corpsEnvoi(p){
-  return p.type === 'releve'
-    ? { ts: p.ts, ok: p.ok, quoi: p.quoi, cid: p.cid }
-    : { med: p.med, ts: p.ts, hp: p.hp, cid: p.cid };
+  if (p.type === 'releve')      return { ts: p.ts, ok: p.ok, quoi: p.quoi, cid: p.cid };
+  if (p.type === 'temperature') return { ts: p.ts, valeur: p.valeur, cid: p.cid };
+  return { med: p.med, ts: p.ts, hp: p.hp, cid: p.cid };
 }
 
 async function videFile(){
@@ -574,7 +630,7 @@ async function videFile(){
   var restantes = [];
   for (var i = 0; i < attente.length; i++){
     var p = attente[i];
-    var n = p.type === 'releve' ? 'controles' : 'prises';
+    var n = NOEUDS[p.type] || 'prises';
     try{
       var res = await fetch(BASE + '/' + n + '.json', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -610,27 +666,32 @@ async function supprime(e){
   }
 }
 
-async function changeHeure(e, nouveauTs){
+/* Modification partielle d'un enregistrement (heure, valeur…), avec retour
+   à l'état précédent si le réseau refuse. */
+async function modifie(e, champs){
   var k = cle(e), n = noeud(e);
   fermeUi();
   if (e.enAttente){
-    attente.forEach(function(p){ if (p.cid === k) p.ts = nouveauTs; });
+    attente.forEach(function(p){ if (p.cid === k) Object.assign(p, champs); });
     sauveAttente(); rendu(true);
     return;
   }
-  var ancien = distant[n][k] ? distant[n][k].ts : null;
-  if (distant[n][k]) distant[n][k].ts = nouveauTs;
+  var avant = {};
+  Object.keys(champs).forEach(function(c){
+    avant[c] = distant[n][k] ? distant[n][k][c] : undefined;
+  });
+  if (distant[n][k]) Object.assign(distant[n][k], champs);
   rendu(true);
   try{
     var res = await fetch(BASE + '/' + n + '/' + k + '.json', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ts: nouveauTs })
+      body: JSON.stringify(champs)
     });
     if (!res.ok) throw new Error(res.status);
   }catch(err){
-    if (distant[n][k] && ancien !== null) distant[n][k].ts = ancien;
+    if (distant[n][k]) Object.assign(distant[n][k], avant);
     rendu(true);
-    alerte('Le changement d’heure n’est pas passé. Vérifiez le réseau et réessayez.', true);
+    alerte('La modification n’est pas passée. Vérifiez le réseau et réessayez.', true);
   }
 }
 
@@ -665,6 +726,7 @@ async function recharge(){
   try{
     distant.prises = (await (await fetch(BASE + '/prises.json')).json()) || {};
     distant.controles = (await (await fetch(BASE + '/controles.json')).json()) || {};
+    distant.temperatures = (await (await fetch(BASE + '/temperatures.json')).json()) || {};
     majBandeau(); rendu(true);
   }catch(e){ majBandeau(); }
 }
@@ -749,6 +811,40 @@ function champsDateHeure(t){
   heure.oninput  = function(){ ui.form.heure = heure.value; };
   box.appendChild(heure);
   return box;
+}
+
+/* Champ de saisie d'une température. Volontairement en `text` + inputmode
+   décimal : un clavier français envoie une virgule, qu'un input[type=number]
+   rejette silencieusement en renvoyant une valeur vide. */
+function champTemperature(valeurInitiale, surSaisie){
+  var cfg = CONFIG.temperature;
+  var box = el('div', 'saisie');
+  var champ = document.createElement('input');
+  champ.type = 'text';
+  champ.inputMode = 'decimal';
+  champ.autocomplete = 'off';
+  champ.placeholder = '37,5';
+  champ.value = valeurInitiale;
+  champ.setAttribute('aria-label', 'Température en degrés Celsius');
+  champ.oninput = function(){ surSaisie(champ.value); };
+  box.appendChild(champ);
+  box.appendChild(el('span', 'unite', '°C'));
+  return box;
+}
+
+/* Renvoie la température arrondie au dixième, ou null en posant ui.erreurTemp. */
+function litTemperature(txt){
+  var cfg = CONFIG.temperature;
+  var s = String(txt === undefined || txt === null ? '' : txt).trim().replace(',', '.');
+  if (!s){ ui.erreurTemp = 'Indiquez une température.'; return null; }
+  var v = Number(s);
+  if (!isFinite(v) || v < cfg.min || v > cfg.max){
+    ui.erreurTemp = 'Température attendue entre ' + String(cfg.min).replace('.', ',')
+      + ' et ' + String(cfg.max).replace('.', ',') + ' °C.';
+    return null;
+  }
+  ui.erreurTemp = '';
+  return Math.round(v * 10) / 10;
 }
 
 function litFormulaire(t){
@@ -868,6 +964,48 @@ function panneauAlerte(sv){
   return al;
 }
 
+/* Bloc température : une valeur et son contexte, sans rythme ni jugement. */
+function renduTemperature(temps, prises, t){
+  var box = document.getElementById('temperature');
+  box.textContent = '';
+  var cfg = CONFIG.temperature;
+
+  var liste = temps.slice().sort(function(a, b){ return b.ts - a.ts; });
+  var dernier = liste[0] || null;
+
+  var p = el('div', 'pause');
+  p.dataset.sujet = 'temperature';
+
+  var haut = el('div', 'haut');
+  haut.appendChild(el('span', 'nom', cfg.nom));
+  if (dernier) haut.appendChild(el('span', 'reste', formatTemp(dernier.valeur)));
+  p.appendChild(haut);
+
+  if (dernier){
+    p.appendChild(el('p', 'quand', 'Prise à ' + hhmm(dernier.ts)
+      + ', il y a ' + duree(t - dernier.ts)
+      + ' · ' + liste.filter(function(x){ return x.ts > t - J; }).length + ' en 24 h'));
+    var ctx = contexteAntipyretique(dernier.ts, prises, cfg.fenetreAntipyretiqueH);
+    p.appendChild(el('p', 'contexte', ctx
+      ? 'Mesurée ' + duree(ctx.ecart) + ' après une dose de ' + nomMed(ctx.med).toLowerCase()
+        + ', qui fait baisser la fièvre : la valeur est minorée.'
+      : 'Mesurée à distance de tout antalgique.'));
+  } else {
+    p.appendChild(el('p', 'quand', 'Aucune mesure enregistrée.'));
+  }
+
+  var saisie = champTemperature(ui.saisieTemp, function(v){ ui.saisieTemp = v; });
+  saisie.appendChild(bouton('btn', 'Enregistrer', function(){
+    var v = litTemperature(ui.saisieTemp);
+    if (v === null){ rendu(true); return; }
+    enregistreTemperature(v);
+  }));
+  p.appendChild(saisie);
+  if (ui.erreurTemp && !ui.ligne && !ui.ajout) p.appendChild(el('p', 'erreur', ui.erreurTemp));
+
+  box.appendChild(p);
+}
+
 function renduTelephones(){
   var box = document.getElementById('telephones');
   box.textContent = '';
@@ -985,9 +1123,14 @@ function libelleJour(ts, t){
   return new Date(ts).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
 }
 
-function sujetEntree(e){ return e.type === 'releve' ? (e.quoi || 'platre') : e.med; }
+function sujetEntree(e){
+  if (e.type === 'temperature') return 'temperature';
+  if (e.type === 'releve') return e.quoi || 'platre';
+  return e.med;
+}
 
 function libelleEntree(e){
+  if (e.type === 'temperature') return 'Température — ' + formatTemp(e.valeur);
   if (e.type !== 'releve') return nomMed(e.med);
   var sv = svParId(e.quoi || 'platre');
   var nom = sv ? sv.nom : 'Surveillance';
@@ -995,6 +1138,7 @@ function libelleEntree(e){
 }
 
 function classePastille(e){
+  if (e.type === 'temperature') return 'temperature';
   if (e.type === 'releve') return e.ok === false ? 'anomalie' : (e.quoi || 'platre');
   return e.med;
 }
@@ -1013,15 +1157,26 @@ function panneauEntree(e, t){
     return pan;
   }
 
+  if (e.type === 'temperature'){
+    pan.appendChild(champTemperature(ui.form.valeur, function(v){ ui.form.valeur = v; }));
+  }
+
   var champs = champsDateHeure(t);
   champs.appendChild(bouton('btn', 'Enregistrer', function(){
     var ts = litFormulaire(t);
     if (ts === null){ rendu(true); return; }
-    changeHeure(e, ts);
+    if (e.type === 'temperature'){
+      var v = litTemperature(ui.form.valeur);
+      if (v === null){ rendu(true); return; }
+      modifie(e, { ts: ts, valeur: v });
+    } else {
+      modifie(e, { ts: ts });
+    }
   }));
   champs.appendChild(bouton('btn secondaire', 'Fermer', function(){ fermeUi(); rendu(true); }));
   pan.appendChild(champs);
   if (ui.erreur) pan.appendChild(el('p', 'erreur', ui.erreur));
+  if (ui.erreurTemp) pan.appendChild(el('p', 'erreur', ui.erreurTemp));
 
   var sup = el('div', 'supprimer');
   sup.appendChild(bouton('lien', 'Supprimer cet enregistrement', function(){ ui.mode = 'suppr'; rendu(true); }));
@@ -1038,7 +1193,8 @@ function panneauAjout(t){
   var options = CONFIG.meds.map(function(m){ return { id:m.id, nom:m.nom }; })
     .concat(CONFIG.surveillances.map(function(s){
       return { id:s.id, nom: s.id === 'platre' ? 'Contrôle' : 'Position' };
-    }));
+    }))
+    .concat([{ id:'temperature', nom:'Température' }]);
   options.forEach(function(o){
     var b = el('button', ui.form.sujet === o.id ? 'actif' : '', o.nom);
     b.dataset.sujet = o.id;
@@ -1047,16 +1203,28 @@ function panneauAjout(t){
   });
   pan.appendChild(choix);
 
+  if (ui.form.sujet === 'temperature'){
+    pan.appendChild(champTemperature(ui.form.valeur, function(v){ ui.form.valeur = v; }));
+  }
+
   var champs = champsDateHeure(t);
   champs.appendChild(bouton('btn', 'Ajouter', function(){
     var ts = litFormulaire(t);
     if (ts === null){ rendu(true); return; }
-    if (svParId(ui.form.sujet)) enregistreReleve(ui.form.sujet, true, ts);
-    else enregistrePrise(ui.form.sujet, false, ts);
+    if (ui.form.sujet === 'temperature'){
+      var v = litTemperature(ui.form.valeur);
+      if (v === null){ rendu(true); return; }
+      enregistreTemperature(v, ts);
+    } else if (svParId(ui.form.sujet)){
+      enregistreReleve(ui.form.sujet, true, ts);
+    } else {
+      enregistrePrise(ui.form.sujet, false, ts);
+    }
   }));
   champs.appendChild(bouton('btn secondaire', 'Annuler', function(){ fermeUi(); rendu(true); }));
   pan.appendChild(champs);
   if (ui.erreur) pan.appendChild(el('p', 'erreur', ui.erreur));
+  if (ui.erreurTemp) pan.appendChild(el('p', 'erreur', ui.erreurTemp));
   return pan;
 }
 
@@ -1068,7 +1236,8 @@ function ouvreEntree(e, t){
   ui.form = {
     sujet: sujetEntree(e),
     jour: Math.min(Math.max(ecart, 0), CONFIG.joursSaisie - 1),
-    heure: pad(new Date(e.ts).getHours()) + ':' + pad(new Date(e.ts).getMinutes())
+    heure: pad(new Date(e.ts).getHours()) + ':' + pad(new Date(e.ts).getMinutes()),
+    valeur: e.type === 'temperature' ? String(e.valeur).replace('.', ',') : ''
   };
   rendu(true);
 }
@@ -1111,7 +1280,7 @@ function renduHistorique(tout, t){
     zone.appendChild(bouton('btn secondaire', 'Ajouter quelque chose d’oublié', function(){
       fermeUi();
       ui.ajout = true;
-      ui.form = { sujet: 'paracetamol', jour: 0,
+      ui.form = { sujet: 'paracetamol', jour: 0, valeur: '',
                   heure: pad(new Date(t).getHours()) + ':' + pad(new Date(t).getMinutes()) };
       rendu(true);
     }));
@@ -1130,18 +1299,21 @@ function rendu(force){
   });
   var slots = planning(etats, t, CONFIG.aVenir).slice(0, CONFIG.aVenir);
   var etatsSv = CONFIG.surveillances.map(function(sv){ return etatSurveillance(sv, releves, t); });
-  var tout = prises.concat(releves);
+  var temps = lesTemperatures();
+  var tout = prises.concat(releves).concat(temps);
 
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
     etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24, es.nuit]; }),
-    tout.map(function(e){ return cle(e) + ':' + e.ts; }).sort(),
-    [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode, ui.erreur, ui.form.sujet]
+    tout.map(function(e){ return cle(e) + ':' + e.ts + ':' + (e.valeur === undefined ? '' : e.valeur); }).sort(),
+    [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode,
+     ui.erreur, ui.erreurTemp, ui.form.sujet]
   ]);
 
   if (force || signature !== derniereSignature){
     derniereSignature = signature;
     renduSurveillance(etatsSv, t);
+    renduTemperature(temps, prises, t);
     renduMaintenant(etats, t);
     renduEnsuite(etats, slots, etatsSv, t);
     renduHistorique(tout, t);
@@ -1174,6 +1346,7 @@ document.addEventListener('visibilitychange', function(){
   await recharge();
   ecoute('prises');
   ecoute('controles');
+  ecoute('temperatures');
   videFile();
   setInterval(function(){ rendu(false); }, 1000);
   setInterval(videFile, 10000);
