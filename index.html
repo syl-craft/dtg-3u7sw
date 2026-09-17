@@ -125,18 +125,20 @@ header .raccourci{
 .pause[data-sujet=temperature] .nom,.pause[data-sujet=temperature] .reste{color:var(--temperature)}
 
 /* ---- température : une valeur, pas une tâche — pas de compte à rebours ---- */
-/* align-items:stretch pour que le champ et le bouton fassent exactement la
-   meme hauteur. Le selecteur vise `input` tout court : le champ est en
-   type=text (inputmode decimal) pour accepter la virgule du clavier francais. */
-.saisie{display:flex; gap:8px; align-items:stretch; margin-top:12px; flex-wrap:wrap}
-.saisie input{
+/* Le champ et son unite forment un bloc insecable, qui se pose soit a cote du
+   bouton Enregistrer, soit en tete de la ligne jour/heure d'un panneau — pas
+   sur une ligne orpheline. Le selecteur vise `input` tout court : le champ est
+   en type=text (inputmode decimal) pour accepter la virgule du clavier francais. */
+.champ-temp{display:inline-flex; align-items:stretch; gap:7px; flex:none}
+.champ-temp input{
   font:inherit; font-size:21px; font-weight:800; letter-spacing:-.02em;
-  flex:none; width:118px; padding:0 14px; min-height:54px;
+  width:104px; padding:0 13px; min-height:52px;
   border:1px solid var(--line); border-radius:4px;
   background:var(--paper); color:var(--ink);
 }
-.saisie .unite{display:flex; align-items:center; font-size:18px; font-weight:700; color:var(--muted)}
-.saisie .btn{flex:1; min-width:140px; min-height:54px}
+.champ-temp .unite{display:flex; align-items:center; font-size:17px; font-weight:700; color:var(--muted)}
+.saisie{display:flex; gap:8px; align-items:stretch; margin-top:12px; flex-wrap:wrap}
+.saisie .btn{flex:1; min-width:140px; min-height:52px}
 .contexte{margin:8px 0 0; font-size:14px; color:var(--muted)}
 .rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
 .pause.arretee{border-left-color:var(--line)}
@@ -229,9 +231,11 @@ header .raccourci{
 .panneau[data-sujet=position]{border-left-color:var(--position)}
 .panneau[data-sujet=temperature]{border-left-color:var(--temperature)}
 .panneau .quoi{margin:0 0 11px; font-size:14px; font-weight:700; color:var(--muted)}
-.champs{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+/* stretch : tous les controles d'une meme ligne font la meme hauteur,
+   quelle que soit leur nature (select, heure, champ temperature, boutons). */
+.champs{display:flex; gap:8px; flex-wrap:wrap; align-items:stretch}
 .panneau select,.panneau input[type=time]{
-  font:inherit; font-size:16px; font-weight:600; padding:11px 12px; min-height:50px;
+  font:inherit; font-size:16px; font-weight:600; padding:0 12px; min-height:52px;
   border:1px solid var(--line); border-radius:4px; background:var(--paper); color:var(--ink);
 }
 .panneau input[type=time]{min-width:118px}
@@ -241,9 +245,11 @@ header .raccourci{
 }
 .btn.secondaire{background:transparent; color:var(--ink); border:1px solid var(--line)}
 .btn.danger{background:var(--alert); color:#fff}
-.choixmed{display:flex; gap:8px; margin:0 0 11px; flex-wrap:wrap}
+/* grille plutot que flex : avec 5 choix, un flex laisse le dernier s'etirer
+   sur toute la largeur et il se confond alors avec un bouton de validation. */
+.choixmed{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 11px}
 .choixmed button{
-  flex:1 1 40%; font:inherit; font-weight:700; font-size:14.5px; padding:13px 6px; min-height:52px;
+  font:inherit; font-weight:700; font-size:14.5px; padding:13px 6px; min-height:52px;
   border-radius:4px; border:2px solid var(--line); background:transparent; color:var(--muted); cursor:pointer;
 }
 .choixmed button[data-sujet=paracetamol].actif{border-color:var(--paracetamol); background:var(--paracetamol); color:#fff}
@@ -977,8 +983,7 @@ function champsDateHeure(t){
    décimal : un clavier français envoie une virgule, qu'un input[type=number]
    rejette silencieusement en renvoyant une valeur vide. */
 function champTemperature(valeurInitiale, surSaisie){
-  var cfg = CONFIG.temperature;
-  var box = el('div', 'saisie');
+  var box = el('span', 'champ-temp');
   var champ = document.createElement('input');
   champ.type = 'text';
   champ.inputMode = 'decimal';
@@ -1191,7 +1196,8 @@ function renduTemperature(temps, prises, t){
     p.appendChild(el('p', 'quand', 'Aucune mesure enregistrée.'));
   }
 
-  var saisie = champTemperature(ui.saisieTemp, function(v){ ui.saisieTemp = v; });
+  var saisie = el('div', 'saisie');
+  saisie.appendChild(champTemperature(ui.saisieTemp, function(v){ ui.saisieTemp = v; }));
   saisie.appendChild(bouton('btn', 'Enregistrer', function(){
     var v = litTemperature(ui.saisieTemp);
     if (v === null){ rendu(true); return; }
@@ -1373,11 +1379,11 @@ function panneauEntree(e, t){
     return pan;
   }
 
-  if (e.type === 'temperature'){
-    pan.appendChild(champTemperature(ui.form.valeur, function(v){ ui.form.valeur = v; }));
-  }
-
   var champs = champsDateHeure(t);
+  if (e.type === 'temperature'){
+    champs.insertBefore(champTemperature(ui.form.valeur, function(v){ ui.form.valeur = v; }),
+                        champs.firstChild);
+  }
   champs.appendChild(bouton('btn', 'Enregistrer', function(){
     var ts = litFormulaire(t);
     if (ts === null){ rendu(true); return; }
@@ -1419,11 +1425,11 @@ function panneauAjout(t){
   });
   pan.appendChild(choix);
 
-  if (ui.form.sujet === 'temperature'){
-    pan.appendChild(champTemperature(ui.form.valeur, function(v){ ui.form.valeur = v; }));
-  }
-
   var champs = champsDateHeure(t);
+  if (ui.form.sujet === 'temperature'){
+    champs.insertBefore(champTemperature(ui.form.valeur, function(v){ ui.form.valeur = v; }),
+                        champs.firstChild);
+  }
   champs.appendChild(bouton('btn', 'Ajouter', function(){
     var ts = litFormulaire(t);
     if (ts === null){ rendu(true); return; }
