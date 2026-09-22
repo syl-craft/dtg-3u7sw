@@ -329,7 +329,7 @@ footer strong{color:var(--ink)}
 
   <div id="bandeau" role="alert"></div>
 
-  <button type="button" class="section" data-sec="nuit" aria-controls="bloc-nuit" hidden>
+  <button type="button" class="section" data-sec="nuit" aria-controls="bloc-nuit">
     <span class="t">Nuit</span><span class="r"></span>
   </button>
   <div class="contenu" id="bloc-nuit" hidden>
@@ -409,7 +409,7 @@ var CONFIG = {
     {
       id:'platre', nom:'Contrôle du plâtre', sousTitre:'Orteils et plâtre',
       intervalleH:4, avecAlerte:true,
-      titreDu:'Contrôle à faire', titreOk:'Plâtre vérifié',
+      titreDu:'Contrôle du plâtre', titreOk:'Plâtre vérifié',
       action:'Faire le contrôle', valide:'Tout est normal',
       intro:'Ce qu’il faut regarder',
       groupes:[
@@ -443,7 +443,7 @@ var CONFIG = {
       id:'position', nom:'Changement de position', sousTitre:'Installation de la jambe',
       intervalleH:2, avecAlerte:false,
       nuit:{ de:22, a:7 },   // pas de changement entre 22 h et 7 h : on laisse dormir
-      titreDu:'Position à changer', titreOk:'Position changée', titreNuit:'Position — pause de nuit',
+      titreDu:'Changement de position', titreOk:'Position changée', titreNuit:'Position — pause de nuit',
       action:'Changer la position', valide:'C’est fait',
       intro:'L’installation à respecter',
       rappel:'Jambe surélevée au-dessus du cœur · talon dans le vide · cale sous le mollet',
@@ -608,16 +608,21 @@ function couverture(meds, prises, t){
            detail: detail };
 }
 
-/* Mode nuit : actif dans la fenêtre configurée, avec deux phases — avant le
-   coucher on prépare, après on surveille la couverture. */
+/* Trois phases. `jour` : la nuit est loin, on montre le plan sans rien réclamer.
+   `prep` : le soir approche, on prépare le coucher. `nuit` : on surveille la
+   couverture. `fenetre` dit seulement si le soir est là — c'est ce qui décide
+   de l'ouverture par défaut de la section, rien d'autre. */
 function etatNuit(cfg, meds, prises, t){
-  if (!cfg || !estNuit(t, cfg.de, cfg.a)) return { actif: false };
+  if (!cfg) return { fenetre: false, phase: 'jour' };
+  var dansLaFenetre = estNuit(t, cfg.de, cfg.a);
   var h = new Date(t).getHours();
-  var prep = h >= cfg.de && h < cfg.coucherH;
+  var phase = !dansLaFenetre ? 'jour'
+            : (h >= cfg.de && h < cfg.coucherH) ? 'prep'
+            : 'nuit';
   var coucher = prochaineHeure(t, cfg.coucherH);
   return {
-    actif: true,
-    phase: prep ? 'prep' : 'nuit',
+    fenetre: dansLaFenetre,
+    phase: phase,
     coucher: coucher,
     avantCoucher: Math.max(0, coucher - t),
     couverture: couverture(meds, prises, t)
@@ -743,21 +748,18 @@ var distant = { prises: {}, controles: {}, temperatures: {}, reglages: {} };
    pas partage — chacun ouvre ce qu'il consulte. */
 var SECTIONS = ['nuit', 'surveillance', 'meds', 'ensuite', 'histo', 'tel'];
 
-/* Deux jeux de défauts : le soir venu, tout se replie sauf la nuit. Les choix
-   de l'utilisateur sont mémorisés séparément pour chaque mode, sinon ce qu'il
-   ouvre en journée resterait ouvert la nuit et l'inverse. */
-var DEFAUTS = {
-  jour: { nuit:false, surveillance:false, meds:false, ensuite:true,  histo:true,  tel:false },
-  nuit: { nuit:true,  surveillance:false, meds:false, ensuite:false, histo:false, tel:false }
-};
-var etatsSections = {};
-try { etatsSections = JSON.parse(localStorage.getItem('sections2') || '{}') || {}; } catch (e) { etatsSections = {}; }
+/* Toutes les sections sont toujours accessibles. Le « mode nuit » ne fait
+   qu'une chose : ouvrir la section Nuit par défaut quand le soir approche.
+   Il ne replie rien d'autre, et un choix manuel prime toujours sur le défaut. */
+var DEFAUTS = { surveillance:false, meds:false, ensuite:true, histo:true, tel:false };
+var ouvertes = {};
+try { ouvertes = JSON.parse(localStorage.getItem('sections2') || '{}') || {}; } catch (e) { ouvertes = {}; }
 var modeNuitActuel = false;
 
+function defautDe(id){ return id === 'nuit' ? modeNuitActuel : !!DEFAUTS[id]; }
+
 function estOuverte(id){
-  var m = modeNuitActuel ? 'nuit' : 'jour';
-  var st = etatsSections[m] || {};
-  return Object.prototype.hasOwnProperty.call(st, id) ? !!st[id] : !!DEFAUTS[m][id];
+  return Object.prototype.hasOwnProperty.call(ouvertes, id) ? !!ouvertes[id] : defautDe(id);
 }
 
 function appliqueSections(){
@@ -765,7 +767,6 @@ function appliqueSections(){
     var btn = document.querySelector('.section[data-sec="' + id + '"]');
     var bloc = document.getElementById('bloc-' + id);
     if (!btn || !bloc) return;
-    if (id === 'nuit' && !modeNuitActuel){ btn.hidden = true; bloc.hidden = true; return; }
     btn.hidden = false;
     var o = estOuverte(id);
     btn.setAttribute('aria-expanded', o ? 'true' : 'false');
@@ -774,10 +775,8 @@ function appliqueSections(){
 }
 
 function basculeSection(id){
-  var m = modeNuitActuel ? 'nuit' : 'jour';
-  etatsSections[m] = etatsSections[m] || {};
-  etatsSections[m][id] = !estOuverte(id);
-  try { localStorage.setItem('sections2', JSON.stringify(etatsSections)); } catch (e) {}
+  ouvertes[id] = !estOuverte(id);
+  try { localStorage.setItem('sections2', JSON.stringify(ouvertes)); } catch (e) {}
   appliqueSections();
 }
 
@@ -1176,7 +1175,7 @@ function renduSurveillance(etatsSv, t){
       c.appendChild(el('p', 'detail', es.dernier
         ? 'Dernier il y a ' + duree(t - es.dernier.ts) + ' (' + hhmm(es.dernier.ts) + ')'
           + ' — ' + es.nb24 + ' en 24 h'
-        : 'Rien d’enregistré pour l’instant — à faire toutes les ' + sv.intervalleH + ' h'));
+        : 'Rien d’enregistré pour l’instant — rythme prévu : toutes les ' + sv.intervalleH + ' h'));
       c.appendChild(bouton('bouton', sv.action, function(){
         fermeUi(); ui.surv = sv.id; rendu(true);
       }));
@@ -1325,11 +1324,33 @@ function enregistreDeux(){
 function renduNuit(en, etats, t){
   var box = document.getElementById('nuit');
   box.textContent = '';
-  if (!en.actif) return;
 
   var cfg = CONFIG.nuit;
   var c = en.couverture;
   var b = el('div', 'bloc-nuit');
+
+  if (en.phase === 'jour'){
+    b.appendChild(el('p', 'phase', 'Cette nuit'));
+    b.appendChild(el('p', 'gros', 'Coucher à ' + hhmm(en.coucher)));
+    b.appendChild(el('p', 'sous', 'Le plan se mettra en route à partir de '
+      + cfg.de + ' h.'));
+    b.appendChild(el('h4', '', 'Au coucher'));
+    var ulJ = el('ul', 'aDonner');
+    CONFIG.meds.forEach(function(m){
+      var li = el('li');
+      var pa = el('span', 'pastille');
+      pa.style.background = 'var(--' + m.id + ')';
+      li.appendChild(pa);
+      li.appendChild(el('span', 'q', m.nom));
+      li.appendChild(el('span', 'd', m.dose.split('—')[0].trim()));
+      ulJ.appendChild(li);
+    });
+    b.appendChild(ulJ);
+    if (cfg.collation) b.appendChild(el('p', 'collation', cfg.collation));
+    (cfg.lignes || []).forEach(function(l){ b.appendChild(el('p', 'apres', l)); });
+    box.appendChild(b);
+    return;
+  }
 
   if (en.phase === 'prep'){
     b.appendChild(el('p', 'phase', 'Préparation de la nuit'));
@@ -1368,7 +1389,7 @@ function renduNuit(en, etats, t){
   var dispos = etats.filter(function(e){ return !e.termine && e.dispo; });
 
   if (dispos.length){
-    b.appendChild(el('h4', '', en.phase === 'prep' ? 'À donner au coucher' : 'À donner'));
+    b.appendChild(el('h4', '', en.phase === 'prep' ? 'Au coucher' : 'Possible maintenant'));
     var ul = el('ul', 'aDonner');
     dispos.forEach(function(e){
       var li = el('li');
@@ -1443,7 +1464,7 @@ function renduMaintenant(etats, prises, t){
     return;
   }
   if (!actifs.some(function(e){ return e.dispo; })){
-    box.appendChild(el('div', 'rien', 'Rien à donner pour le moment.'));
+    box.appendChild(el('div', 'rien', 'Aucun des deux n’est disponible pour l’instant.'));
   }
 
   actifs.forEach(function(e){
@@ -1722,23 +1743,29 @@ function renduHistorique(tout, t){
 function resumes(etats, etatsSv, temps, slots, tout, t, en){
   var r = { nuit: [], surveillance: [], meds: [], ensuite: [], histo: [], tel: [] };
 
-  if (en && en.actif){
-    if (en.phase === 'prep'){
+  if (en){
+    if (en.phase === 'jour'){
+      r.nuit.push({ texte: 'coucher à ' + hhmm(en.coucher) });
+    } else if (en.phase === 'prep'){
       r.nuit.push({ texte: 'coucher dans ' + duree(en.avantCoucher) });
     } else if (en.couverture.couvert){
       r.nuit.push({ texte: 'couvert jusqu’à ' + hhmm(en.couverture.jusqua) });
     } else {
-      r.nuit.push({ texte: 'couverture terminée', urgent: true });
+      r.nuit.push({ texte: 'plus couvert', urgent: true });
     }
   }
 
+  /* Formulation en constat, pas en injonction : ces gestes sont possibles selon
+     la douleur et l'état, ils ne sont plus impératifs comme les premiers jours. */
   etatsSv.forEach(function(es){
     var nom = es.sv.id === 'platre' ? 'Plâtre' : 'Position';
-    if (es.arretee)      r.surveillance.push({ texte: nom + ' arrêté' });
+    if (es.arretee)       r.surveillance.push({ texte: nom + ' arrêté' });
     else if (es.anomalie) r.surveillance.push({ texte: nom + ' anomalie', urgent: true });
-    else if (es.du)       r.surveillance.push({ texte: nom + ' à faire', urgent: true });
-    else if (es.nuit)     r.surveillance.push({ texte: nom + ' nuit' });
-    else                  r.surveillance.push({ texte: nom + ' ' + duree(es.restant) });
+    else if (es.du)       r.surveillance.push({ texte: nom + (es.dernier
+                            ? ' depuis ' + duree(t - es.dernier.ts)
+                            : ' jamais fait') });
+    else if (es.nuit)     r.surveillance.push({ texte: nom + ' pause nuit' });
+    else                  r.surveillance.push({ texte: nom + ' dans ' + duree(es.restant) });
   });
   var derniereTemp = temps.slice().sort(function(a, b){ return b.ts - a.ts; })[0];
   if (derniereTemp) r.surveillance.push({ texte: formatTemp(derniereTemp.valeur) });
@@ -1746,8 +1773,8 @@ function resumes(etats, etatsSv, temps, slots, tout, t, en){
   etats.forEach(function(e){
     var nom = e.med.nom;
     if (e.termine)    r.meds.push({ texte: nom + ' terminé' });
-    else if (e.dispo) r.meds.push({ texte: nom + ' à donner', urgent: true });
-    else              r.meds.push({ texte: nom + ' ' + duree(e.restant) });
+    else if (e.dispo) r.meds.push({ texte: nom + ' possible' });
+    else              r.meds.push({ texte: nom + ' dans ' + duree(e.restant) });
   });
 
   if (slots.length) r.ensuite.push({ texte: hhmm(slots[0].ts) + ' ' + slots[0].med.nom });
@@ -1782,8 +1809,10 @@ function rendu(force){
   var tout = prises.concat(releves).concat(temps);
   var en = etatNuit(CONFIG.nuit, CONFIG.meds, prises, t);
 
-  if (en.actif !== modeNuitActuel){
-    modeNuitActuel = en.actif;
+  /* La fenêtre du soir ne change que le défaut d'ouverture de la section Nuit.
+     Un choix manuel déjà mémorisé n'est pas écrasé. */
+  if (en.fenetre !== modeNuitActuel){
+    modeNuitActuel = en.fenetre;
     appliqueSections();
     force = true;
   }
@@ -1793,7 +1822,7 @@ function rendu(force){
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
     etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24, es.nuit, es.arretee]; }),
-    [en.actif, en.phase, en.couverture ? en.couverture.jusqua : 0,
+    [en.phase, en.couverture ? en.couverture.jusqua : 0,
      en.couverture ? en.couverture.couvert : false],
     tout.map(function(e){ return cle(e) + ':' + e.ts + ':' + (e.valeur === undefined ? '' : e.valeur); }).sort(),
     [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode,
