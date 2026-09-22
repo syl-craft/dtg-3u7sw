@@ -465,6 +465,7 @@ var CONFIG = {
   nuit: {
     de: 19, a: 7,          // fenêtre pendant laquelle l'app bascule en mode nuit
     coucherH: 21,          // heure de coucher : bascule « préparation » → « nuit en cours »
+    recenceH: 12,          // au-delà, on n'annonce plus « couverture terminée » mais « rien en cours »
     titre: 'Pour la nuit',
     collation: 'avec une collation — yaourt, lait, pain et fromage',
     lignes: [
@@ -1347,12 +1348,15 @@ function renduNuit(en, etats, t){
     s.dataset.prefixe = 'encore ';
     b.appendChild(s);
   } else {
+    /* passé quelques heures, « couverture terminée depuis 46 h » n'a plus de
+       sens : ce n'est plus une couverture qui s'achève, c'est qu'il n'y a rien. */
+    var recent = c.jusqua && c.depuis <= (cfg.recenceH || 12) * H;
     b.appendChild(el('p', 'phase', 'Nuit en cours'));
-    b.appendChild(el('p', 'gros alerte', c.jusqua ? 'Couverture terminée' : 'Rien en cours'));
-    var s2 = el('p', 'sous', c.jusqua
+    b.appendChild(el('p', 'gros alerte', recent ? 'Couverture terminée' : 'Rien en cours'));
+    var s2 = el('p', 'sous', recent
       ? 'depuis ' + duree(c.depuis) + ' (fin estimée à ' + hhmm(c.jusqua) + ')'
-      : 'Aucune dose enregistrée récemment.');
-    if (c.jusqua){
+      : 'Aucune dose récente enregistrée.');
+    if (recent){
       s2.dataset.cible = String(c.jusqua);
       s2.dataset.format = 'depuis';
       s2.dataset.prefixe = 'depuis ';
