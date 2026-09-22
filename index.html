@@ -1755,17 +1755,14 @@ function resumes(etats, etatsSv, temps, slots, tout, t, en){
     }
   }
 
-  /* Formulation en constat, pas en injonction : ces gestes sont possibles selon
-     la douleur et l'état, ils ne sont plus impératifs comme les premiers jours. */
+  /* Résumé volontairement réduit à la dernière température : les compteurs du
+     plâtre et de la position encombraient sans rien apprendre. Seule exception,
+     une anomalie signalée — elle ne doit pas disparaître derrière un repli. */
   etatsSv.forEach(function(es){
-    var nom = es.sv.id === 'platre' ? 'Plâtre' : 'Position';
-    if (es.arretee)       r.surveillance.push({ texte: nom + ' arrêté' });
-    else if (es.anomalie) r.surveillance.push({ texte: nom + ' anomalie', urgent: true });
-    else if (es.du)       r.surveillance.push({ texte: nom + (es.dernier
-                            ? ' depuis ' + duree(t - es.dernier.ts)
-                            : ' jamais fait') });
-    else if (es.nuit)     r.surveillance.push({ texte: nom + ' pause nuit' });
-    else                  r.surveillance.push({ texte: nom + ' dans ' + duree(es.restant) });
+    if (es.anomalie){
+      r.surveillance.push({ texte: (es.sv.id === 'platre' ? 'Plâtre' : 'Position') + ' anomalie',
+                            urgent: true });
+    }
   });
   var derniereTemp = temps.slice().sort(function(a, b){ return b.ts - a.ts; })[0];
   if (derniereTemp) r.surveillance.push({ texte: formatTemp(derniereTemp.valeur) });
