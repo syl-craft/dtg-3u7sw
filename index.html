@@ -140,6 +140,13 @@ header .raccourci{
 .saisie{display:flex; gap:8px; align-items:stretch; margin-top:12px; flex-wrap:wrap}
 .saisie .btn{flex:1; min-width:140px; min-height:52px}
 .contexte{margin:8px 0 0; font-size:14px; color:var(--muted)}
+.conseil{
+  margin:4px 0 12px; padding:15px 16px; border-radius:6px;
+  background:var(--card); border:1px solid var(--line); border-left:7px solid var(--ink);
+}
+.conseil h4{margin:0 0 8px; font-size:13px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+.conseil p{margin:0 0 8px; font-size:15px; line-height:1.45}
+.conseil p:last-child{margin-bottom:0}
 .rien{padding:16px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:15px; margin-bottom:12px}
 .pause.arretee{border-left-color:var(--line)}
 .pause.arretee .nom,.pause.arretee .reste{color:var(--muted)}
@@ -341,7 +348,8 @@ footer strong{color:var(--ink)}
   <footer>
     <p>Les deux comptes à rebours des médicaments sont indépendants. Aucun délai n'est imposé entre paracétamol et ibuprofène&nbsp;: ils peuvent être donnés ensemble pour renforcer l'effet antalgique. L'ibuprofène se donne <strong>avec quelque chose à manger</strong>, et le flacon se <strong>secoue avant chaque prise</strong>.</p>
     <p>Les délais affichés sont des minimums, pas des horaires imposés&nbsp;: attendre plus longtemps est toujours possible.</p>
-    <p>Délais de 6&nbsp;h et 8&nbsp;h confirmés par le service de chirurgie pédiatrique le 15/09/2026. Ordonnance du Dr Wassom du 14/09/2026, Hôpital NOVO Pontoise. Première prise le 15/09 à 11&nbsp;h. Doses calculées sur le poids réel de 19&nbsp;kg.</p>
+    <p><strong>Traitements repris le 22/09/2026</strong> après passage aux urgences&nbsp;: plâtre jugé correct, antalgiques à poursuivre. Aucune durée n'a été communiquée — l'app n'affiche donc pas de date de fin. À faire préciser.</p>
+    <p>Délais de 6&nbsp;h et 8&nbsp;h confirmés par le service de chirurgie pédiatrique le 15/09/2026. Ordonnance initiale du Dr Wassom du 14/09/2026, Hôpital NOVO Pontoise. Doses calculées sur le poids réel de 19&nbsp;kg.</p>
   </footer>
 </div>
 
@@ -350,8 +358,14 @@ footer strong{color:var(--ink)}
    Réglages — tout ce qui peut changer sur avis médical est ici.
    ======================================================================= */
 var CONFIG = {
-  ordonnance: '2026-09-14',  // date de l'ordonnance : premier point de départ possible
-  debut: '2026-09-15',   // premier jour du traitement (première prise à 11 h)
+  ordonnance: '2026-09-14',  // date de l'ordonnance initiale
+  debut: '2026-09-15',       // première prise du premier traitement
+  /* Traitements repris le 22/09 après passage aux urgences : le plâtre est
+     jugé correct, les antalgiques sont à poursuivre. Aucune durée n'a été
+     communiquée — d'où `jours: null`, qui signifie « sans date de fin ».
+     Dès que la durée est connue, la remettre sur chaque médicament. */
+  reprise: '2026-09-22',
+  coucher: '21:00',          // ancre de la stratégie de nuit
   ecartCroiseH: 0,       // délai imposé ENTRE les deux molécules (0 = aucun)
   aVenir: 6,             // nombre de créneaux affichés dans le planning
   joursSaisie: 3,        // profondeur du sélecteur de jour (aujourd'hui inclus)
@@ -359,10 +373,10 @@ var CONFIG = {
   meds: [
     { id:'paracetamol', nom:'Paracétamol', action:'J’ai donné le paracétamol', de:'de paracétamol',
       dose:'285 mg — 1 dose-poids 19 kg', detail:'12 mL de suspension 2,4 % (24 mg/mL)',
-      intervalleH:6, max24:4, jours:7 },
+      intervalleH:6, max24:4, jours:null },
     { id:'ibuprofene', nom:'Ibuprofène', action:'J’ai donné l’ibuprofène', de:'d’ibuprofène',
       dose:'190 mg — 1 dose-poids 19 kg', detail:'9,5 mL de suspension 2 % (20 mg/mL)',
-      intervalleH:8, max24:3, jours:5 }
+      intervalleH:8, max24:3, jours:null }
   ],
 
   surveillances: [
@@ -418,6 +432,19 @@ var CONFIG = {
     }
   ],
 
+  /* Stratégie de nuit. Sur les 4 nuits enregistrées, la douleur est revenue
+     en moyenne 4 h 45 après la dose du soir (mini 3 h 52, maxi 5 h 58) — soit
+     exactement la fin d'action du paracétamol. La dose du soir était donnée
+     entre 19h28 et 20h11, donc épuisée avant minuit. */
+  nuit: {
+    titre: 'Pour la nuit',
+    lignes: [
+      'Donner les deux ensemble au coucher, pas au dîner. Une dose à 19h30 est épuisée vers minuit ; à 21h elle tient jusqu’à 2 ou 3 h.',
+      'Puis paracétamol seul vers 3 h, avant le réveil plutôt qu’après : un antalgique met 30 à 60 min à agir.',
+      'L’ibuprofène du coucher se donne avec une collation — yaourt, lait, pain et fromage.'
+    ]
+  },
+
   /* La température porte une valeur, pas un « c'est fait » : pas de rythme
      imposé, pas de seuil, pas d'alerte — l'app enregistre et affiche. */
   temperature: {
@@ -453,7 +480,10 @@ function duree(ms){
 
 function relatif(ts, t){ return ts - t <= 0 ? 'maintenant' : 'dans ' + duree(ts - t); }
 
-function finTraitement(debutMs, jours){ return debutMs + jours * J; }
+/* `jours` à null = traitement sans date de fin : rien ne se termine tout seul. */
+function finTraitement(debutMs, jours){
+  return (jours === null || jours === undefined) ? Infinity : debutMs + jours * J;
+}
 function jourTraitement(t, debutMs){ return Math.floor((t - debutMs) / J) + 1; }
 
 /* Minuit du jour auquel appartient cet instant. */
@@ -463,21 +493,20 @@ function jourZero(ts){
   return d.getTime();
 }
 
-/* « Jour N sur X » compté depuis deux origines distinctes : la date de
-   l'ordonnance, et la première prise réellement enregistrée. Les deux ne
-   coïncident pas forcément, et la durée prescrite se compte à partir de
-   l'une ou de l'autre — autant montrer les deux plutôt que trancher. */
-function compteurJours(med, prises, t, ordonnanceMs){
-  var liste = prises.filter(function(p){ return p.med === med.id; })
+/* « Jour N » compté depuis la première prise réellement enregistrée — c'est
+   elle qui fait foi, pas la date de l'ordonnance. `depuisMs` permet de repartir
+   à zéro après une reprise de traitement : les prises antérieures sont ignorées. */
+function compteurJours(med, prises, t, depuisMs){
+  var seuil = depuisMs || 0;
+  var liste = prises.filter(function(p){ return p.med === med.id && p.ts >= seuil; })
                     .sort(function(a, b){ return a.ts - b.ts; });
   var premiere = liste[0] || null;
   var origine = premiere ? jourZero(premiere.ts) : null;
   return {
     premiere: premiere,
-    jourOrdonnance: Math.max(1, jourTraitement(t, ordonnanceMs)),
     jourPremiere: origine ? Math.max(1, jourTraitement(t, origine)) : null,
-    finOrdonnance: finTraitement(ordonnanceMs, med.jours),
-    finPremiere: origine ? finTraitement(origine, med.jours) : null
+    finPremiere: origine ? finTraitement(origine, med.jours) : null,
+    sansFin: med.jours === null || med.jours === undefined
   };
 }
 
@@ -644,6 +673,7 @@ async function caleHorloge(){
    ======================================================================= */
 var DEBUT = new Date(CONFIG.debut + 'T00:00:00').getTime();
 var ORDONNANCE = new Date(CONFIG.ordonnance + 'T00:00:00').getTime();
+var REPRISE = new Date(CONFIG.reprise + 'T00:00:00').getTime();
 var distant = { prises: {}, controles: {}, temperatures: {}, reglages: {} };
 
 /* Sections repliables. Repliees par defaut ; l'etat est propre a l'appareil,
@@ -1216,16 +1246,17 @@ function renduTelephones(){
 }
 
 /* ---- médicaments ---- */
-/* Repères temporels, comptés depuis la première prise réellement donnée :
-   c'est elle qui fait foi, pas la date de l'ordonnance. */
+/* Repères temporels, comptés depuis la première prise de la reprise en cours. */
 function lignesJours(m, prises, t){
-  var c = compteurJours(m, prises, t, ORDONNANCE);
-  if (!c.premiere) return ['Aucune prise enregistrée · ' + m.jours + ' jours prescrits'];
-  return [
-    'Jour ' + c.jourPremiere + ' sur ' + m.jours
-      + ' — 1re prise le ' + dateCourte(c.premiere.ts) + ' à ' + hhmm(c.premiere.ts),
-    'Dernier jour : ' + dateCourte(c.finPremiere - J)
-  ];
+  var c = compteurJours(m, prises, t, REPRISE);
+  if (!c.premiere){
+    return ['Traitement repris le ' + dateCourte(REPRISE) + ' — aucune prise enregistrée depuis'];
+  }
+  var l1 = 'Jour ' + c.jourPremiere + (c.sansFin ? '' : ' sur ' + m.jours)
+    + ' — 1re prise le ' + dateCourte(c.premiere.ts) + ' à ' + hhmm(c.premiere.ts);
+  return c.sansFin
+    ? [l1, 'Durée non précisée par les urgences — à confirmer']
+    : [l1, 'Dernier jour : ' + dateCourte(c.finPremiere - J)];
 }
 
 function renduMaintenant(etats, prises, t){
@@ -1292,6 +1323,14 @@ function renduMaintenant(etats, prises, t){
     }
     box.appendChild(p);
   });
+
+  var n = CONFIG.nuit;
+  if (n){
+    var c = el('div', 'conseil');
+    c.appendChild(el('h4', '', n.titre));
+    n.lignes.forEach(function(l){ c.appendChild(el('p', '', l)); });
+    box.appendChild(c);
+  }
 }
 
 function renduEnsuite(etats, slots, etatsSv, t){
