@@ -140,6 +140,26 @@ header .raccourci{
 .saisie{display:flex; gap:8px; align-items:stretch; margin-top:12px; flex-wrap:wrap}
 .saisie .btn{flex:1; min-width:140px; min-height:52px}
 .contexte{margin:8px 0 0; font-size:14px; color:var(--muted)}
+/* ---- bloc nuit : sombre, parce qu'on le regarde dans le noir ---- */
+.bloc-nuit{
+  margin:0 0 12px; padding:18px; border-radius:6px;
+  background:#141A24; color:#E8EBEF;
+}
+.bloc-nuit .phase{margin:0 0 2px; font-size:13px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#93A4B8}
+.bloc-nuit .gros{margin:0; font-size:34px; font-weight:800; letter-spacing:-.03em; line-height:1.1}
+.bloc-nuit .gros.alerte{color:#FF9A90}
+.bloc-nuit .sous{margin:4px 0 0; font-size:15px; color:#B9C4D2}
+.bloc-nuit h4{margin:18px 0 8px; font-size:13px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#93A4B8}
+.bloc-nuit .aDonner{list-style:none; margin:0 0 4px; padding:0}
+.bloc-nuit .aDonner li{display:flex; align-items:baseline; gap:10px; padding:7px 0; font-size:16px}
+.bloc-nuit .aDonner .pastille{width:10px; height:10px; border-radius:50%; flex:none}
+.bloc-nuit .aDonner .q{flex:1; font-weight:700}
+.bloc-nuit .aDonner .d{font-size:14px; color:#B9C4D2; white-space:nowrap}
+.bloc-nuit .collation{margin:2px 0 0; font-size:14px; color:#B9C4D2}
+.bloc-nuit .bouton{margin-top:14px; background:#fff; color:#141A24}
+.bloc-nuit .bouton + .bouton{margin-top:9px}
+.bloc-nuit .apres{margin:16px 0 0; padding-top:14px; border-top:1px solid #2B333C; font-size:14.5px; color:#B9C4D2}
+
 .conseil{
   margin:4px 0 12px; padding:15px 16px; border-radius:6px;
   background:var(--card); border:1px solid var(--line); border-left:7px solid var(--ink);
@@ -309,6 +329,13 @@ footer strong{color:var(--ink)}
 
   <div id="bandeau" role="alert"></div>
 
+  <button type="button" class="section" data-sec="nuit" aria-controls="bloc-nuit" hidden>
+    <span class="t">Nuit</span><span class="r"></span>
+  </button>
+  <div class="contenu" id="bloc-nuit" hidden>
+    <div id="nuit"></div>
+  </div>
+
   <button type="button" class="section" data-sec="surveillance" aria-controls="bloc-surveillance">
     <span class="t">Surveillance</span><span class="r"></span>
   </button>
@@ -365,7 +392,6 @@ var CONFIG = {
      communiquée — d'où `jours: null`, qui signifie « sans date de fin ».
      Dès que la durée est connue, la remettre sur chaque médicament. */
   reprise: '2026-09-22',
-  coucher: '21:00',          // ancre de la stratégie de nuit
   ecartCroiseH: 0,       // délai imposé ENTRE les deux molécules (0 = aucun)
   aVenir: 6,             // nombre de créneaux affichés dans le planning
   joursSaisie: 3,        // profondeur du sélecteur de jour (aujourd'hui inclus)
@@ -373,10 +399,10 @@ var CONFIG = {
   meds: [
     { id:'paracetamol', nom:'Paracétamol', action:'J’ai donné le paracétamol', de:'de paracétamol',
       dose:'285 mg — 1 dose-poids 19 kg', detail:'12 mL de suspension 2,4 % (24 mg/mL)',
-      intervalleH:6, max24:4, jours:null },
+      intervalleH:6, max24:4, jours:null, couvertureH:5 },
     { id:'ibuprofene', nom:'Ibuprofène', action:'J’ai donné l’ibuprofène', de:'d’ibuprofène',
       dose:'190 mg — 1 dose-poids 19 kg', detail:'9,5 mL de suspension 2 % (20 mg/mL)',
-      intervalleH:8, max24:3, jours:null }
+      intervalleH:8, max24:3, jours:null, couvertureH:7 }
   ],
 
   surveillances: [
@@ -437,7 +463,10 @@ var CONFIG = {
      exactement la fin d'action du paracétamol. La dose du soir était donnée
      entre 19h28 et 20h11, donc épuisée avant minuit. */
   nuit: {
+    de: 19, a: 7,          // fenêtre pendant laquelle l'app bascule en mode nuit
+    coucherH: 21,          // heure de coucher : bascule « préparation » → « nuit en cours »
     titre: 'Pour la nuit',
+    collation: 'avec une collation — yaourt, lait, pain et fromage',
     lignes: [
       'Donner les deux ensemble au coucher, pas au dîner. Une dose à 19h30 est épuisée vers minuit ; à 21h elle tient jusqu’à 2 ou 3 h.',
       'Puis paracétamol seul vers 3 h, avant le réveil plutôt qu’après : un antalgique met 30 à 60 min à agir.',
@@ -561,6 +590,39 @@ function etatMed(med, prises, t, debutMs, ecartCroiseH){
            nb24: nb24, termine: termine, fin: fin, restant: Math.max(0, dispoA - t) };
 }
 
+/* Jusqu'à quand l'enfant est couvert : la plus tardive des fins d'action des
+   doses en cours. `couvertureH` est la durée antalgique estimée, distincte de
+   l'intervalle minimum entre deux prises — c'est une estimation, pas une garantie. */
+function couverture(meds, prises, t){
+  var jusqua = 0;
+  var detail = meds.map(function(m){
+    var d = prises.filter(function(p){ return p.med === m.id; })
+                  .sort(function(a, b){ return b.ts - a.ts; })[0] || null;
+    var fin = d ? d.ts + (m.couvertureH || m.intervalleH) * H : 0;
+    if (fin > jusqua) jusqua = fin;
+    return { med: m, derniere: d, jusqua: fin };
+  });
+  return { jusqua: jusqua, couvert: jusqua > t,
+           restant: Math.max(0, jusqua - t), depuis: Math.max(0, t - jusqua),
+           detail: detail };
+}
+
+/* Mode nuit : actif dans la fenêtre configurée, avec deux phases — avant le
+   coucher on prépare, après on surveille la couverture. */
+function etatNuit(cfg, meds, prises, t){
+  if (!cfg || !estNuit(t, cfg.de, cfg.a)) return { actif: false };
+  var h = new Date(t).getHours();
+  var prep = h >= cfg.de && h < cfg.coucherH;
+  var coucher = prochaineHeure(t, cfg.coucherH);
+  return {
+    actif: true,
+    phase: prep ? 'prep' : 'nuit',
+    coucher: coucher,
+    avantCoucher: Math.max(0, coucher - t),
+    couverture: couverture(meds, prises, t)
+  };
+}
+
 /* Créneaux à venir, les deux molécules fusionnées et triées par heure. */
 function planning(etats, t, parMed){
   var slots = [];
@@ -678,15 +740,23 @@ var distant = { prises: {}, controles: {}, temperatures: {}, reglages: {} };
 
 /* Sections repliables. Repliees par defaut ; l'etat est propre a l'appareil,
    pas partage — chacun ouvre ce qu'il consulte. */
-var SECTIONS = ['surveillance', 'meds', 'ensuite', 'histo', 'tel'];
-var DEFAUTS = { surveillance: false, meds: false, ensuite: true, histo: true, tel: false };
-var ouvertes = {};
-try { ouvertes = JSON.parse(localStorage.getItem('sections') || '{}') || {}; } catch (e) { ouvertes = {}; }
+var SECTIONS = ['nuit', 'surveillance', 'meds', 'ensuite', 'histo', 'tel'];
 
-/* Une section jamais touchée sur cet appareil suit le défaut ; dès qu'on la
-   bascule, c'est le choix mémorisé qui prime. */
+/* Deux jeux de défauts : le soir venu, tout se replie sauf la nuit. Les choix
+   de l'utilisateur sont mémorisés séparément pour chaque mode, sinon ce qu'il
+   ouvre en journée resterait ouvert la nuit et l'inverse. */
+var DEFAUTS = {
+  jour: { nuit:false, surveillance:false, meds:false, ensuite:true,  histo:true,  tel:false },
+  nuit: { nuit:true,  surveillance:false, meds:false, ensuite:false, histo:false, tel:false }
+};
+var etatsSections = {};
+try { etatsSections = JSON.parse(localStorage.getItem('sections2') || '{}') || {}; } catch (e) { etatsSections = {}; }
+var modeNuitActuel = false;
+
 function estOuverte(id){
-  return Object.prototype.hasOwnProperty.call(ouvertes, id) ? !!ouvertes[id] : !!DEFAUTS[id];
+  var m = modeNuitActuel ? 'nuit' : 'jour';
+  var st = etatsSections[m] || {};
+  return Object.prototype.hasOwnProperty.call(st, id) ? !!st[id] : !!DEFAUTS[m][id];
 }
 
 function appliqueSections(){
@@ -694,6 +764,8 @@ function appliqueSections(){
     var btn = document.querySelector('.section[data-sec="' + id + '"]');
     var bloc = document.getElementById('bloc-' + id);
     if (!btn || !bloc) return;
+    if (id === 'nuit' && !modeNuitActuel){ btn.hidden = true; bloc.hidden = true; return; }
+    btn.hidden = false;
     var o = estOuverte(id);
     btn.setAttribute('aria-expanded', o ? 'true' : 'false');
     bloc.hidden = !o;
@@ -701,8 +773,10 @@ function appliqueSections(){
 }
 
 function basculeSection(id){
-  ouvertes[id] = !estOuverte(id);
-  try { localStorage.setItem('sections', JSON.stringify(ouvertes)); } catch (e) {}
+  var m = modeNuitActuel ? 'nuit' : 'jour';
+  etatsSections[m] = etatsSections[m] || {};
+  etatsSections[m][id] = !estOuverte(id);
+  try { localStorage.setItem('sections2', JSON.stringify(etatsSections)); } catch (e) {}
   appliqueSections();
 }
 
@@ -1239,6 +1313,102 @@ function renduTemperature(temps, prises, t){
   box.appendChild(p);
 }
 
+/* Enregistre les deux médicaments d'un coup : c'est le geste du coucher. */
+function enregistreDeux(){
+  CONFIG.meds.forEach(function(m){
+    attente.push({ cid: nouvelleCle(), type: 'prise', med: m.id, ts: now(), hp: false });
+  });
+  sauveAttente(); fermeUi(); rendu(true); videFile();
+}
+
+function renduNuit(en, etats, t){
+  var box = document.getElementById('nuit');
+  box.textContent = '';
+  if (!en.actif) return;
+
+  var cfg = CONFIG.nuit;
+  var c = en.couverture;
+  var b = el('div', 'bloc-nuit');
+
+  if (en.phase === 'prep'){
+    b.appendChild(el('p', 'phase', 'Préparation de la nuit'));
+    var g = el('p', 'gros', 'Coucher dans ' + duree(en.avantCoucher));
+    g.dataset.cible = String(en.coucher);
+    g.dataset.format = 'duree';
+    g.dataset.prefixe = 'Coucher dans ';
+    b.appendChild(g);
+    b.appendChild(el('p', 'sous', 'Prévu à ' + hhmm(en.coucher) + '.'));
+  } else if (c.couvert){
+    b.appendChild(el('p', 'phase', 'Nuit en cours'));
+    b.appendChild(el('p', 'gros', 'Couvert jusqu’à ' + hhmm(c.jusqua)));
+    var s = el('p', 'sous', 'encore ' + duree(c.restant));
+    s.dataset.cible = String(c.jusqua);
+    s.dataset.format = 'duree';
+    s.dataset.prefixe = 'encore ';
+    b.appendChild(s);
+  } else {
+    b.appendChild(el('p', 'phase', 'Nuit en cours'));
+    b.appendChild(el('p', 'gros alerte', c.jusqua ? 'Couverture terminée' : 'Rien en cours'));
+    var s2 = el('p', 'sous', c.jusqua
+      ? 'depuis ' + duree(c.depuis) + ' (fin estimée à ' + hhmm(c.jusqua) + ')'
+      : 'Aucune dose enregistrée récemment.');
+    if (c.jusqua){
+      s2.dataset.cible = String(c.jusqua);
+      s2.dataset.format = 'depuis';
+      s2.dataset.prefixe = 'depuis ';
+      s2.dataset.suffixe = ' (fin estimée à ' + hhmm(c.jusqua) + ')';
+    }
+    b.appendChild(s2);
+  }
+
+  var dispos = etats.filter(function(e){ return !e.termine && e.dispo; });
+
+  if (dispos.length){
+    b.appendChild(el('h4', '', en.phase === 'prep' ? 'À donner au coucher' : 'À donner'));
+    var ul = el('ul', 'aDonner');
+    dispos.forEach(function(e){
+      var li = el('li');
+      var pa = el('span', 'pastille');
+      pa.style.background = 'var(--' + e.med.id + ')';
+      li.appendChild(pa);
+      li.appendChild(el('span', 'q', e.med.nom));
+      li.appendChild(el('span', 'd', e.med.dose.split('—')[0].trim()));
+      ul.appendChild(li);
+    });
+    b.appendChild(ul);
+    if (dispos.some(function(e){ return e.med.id === 'ibuprofene'; }) && cfg.collation){
+      b.appendChild(el('p', 'collation', cfg.collation));
+    }
+
+    if (dispos.length === CONFIG.meds.length){
+      var bd = el('button', 'bouton', 'Les deux ont été donnés');
+      bd.onclick = function(){ bd.disabled = true; enregistreDeux(); };
+      b.appendChild(bd);
+    } else {
+      dispos.forEach(function(e){
+        var bu = el('button', 'bouton', e.med.action);
+        bu.onclick = function(){ bu.disabled = true; enregistrePrise(e.med.id, false); };
+        b.appendChild(bu);
+      });
+    }
+  } else {
+    var attentes = etats.filter(function(e){ return !e.termine && !e.dispo; })
+      .map(function(e){ return e.med.nom + ' possible à ' + hhmm(e.dispoA); });
+    if (attentes.length) b.appendChild(el('p', 'apres', attentes.join(' · ') + '.'));
+  }
+
+  if (en.phase === 'prep'){
+    var estim = en.coucher + Math.max.apply(null, CONFIG.meds.map(function(m){
+      return (m.couvertureH || m.intervalleH) * H;
+    }));
+    b.appendChild(el('p', 'apres', 'Si donnés à ' + hhmm(en.coucher)
+      + ', couverture estimée jusqu’à ' + hhmm(estim)
+      + '. Réveil à prévoir vers ' + hhmm(en.coucher + CONFIG.meds[0].intervalleH * H) + '.'));
+  }
+
+  box.appendChild(b);
+}
+
 function renduTelephones(){
   var box = document.getElementById('telephones');
   box.textContent = '';
@@ -1545,8 +1715,18 @@ function renduHistorique(tout, t){
 
 /* Ce que chaque section replièe affiche : juste assez pour ne pas avoir à
    l'ouvrir. Les entrées urgentes sont marquees pour ressortir en couleur. */
-function resumes(etats, etatsSv, temps, slots, tout, t){
-  var r = { surveillance: [], meds: [], ensuite: [], histo: [], tel: [] };
+function resumes(etats, etatsSv, temps, slots, tout, t, en){
+  var r = { nuit: [], surveillance: [], meds: [], ensuite: [], histo: [], tel: [] };
+
+  if (en && en.actif){
+    if (en.phase === 'prep'){
+      r.nuit.push({ texte: 'coucher dans ' + duree(en.avantCoucher) });
+    } else if (en.couverture.couvert){
+      r.nuit.push({ texte: 'couvert jusqu’à ' + hhmm(en.couverture.jusqua) });
+    } else {
+      r.nuit.push({ texte: 'couverture terminée', urgent: true });
+    }
+  }
 
   etatsSv.forEach(function(es){
     var nom = es.sv.id === 'platre' ? 'Plâtre' : 'Position';
@@ -1596,12 +1776,21 @@ function rendu(force){
   });
   var temps = lesTemperatures();
   var tout = prises.concat(releves).concat(temps);
+  var en = etatNuit(CONFIG.nuit, CONFIG.meds, prises, t);
 
-  majResumes(resumes(etats, etatsSv, temps, slots, tout, t));
+  if (en.actif !== modeNuitActuel){
+    modeNuitActuel = en.actif;
+    appliqueSections();
+    force = true;
+  }
+
+  majResumes(resumes(etats, etatsSv, temps, slots, tout, t, en));
 
   var signature = JSON.stringify([
     etats.map(function(e){ return [e.dispo, e.dispoA, e.nb24, e.termine, e.cause]; }),
     etatsSv.map(function(es){ return [es.du, es.prochain, es.anomalie, es.nb24, es.nuit, es.arretee]; }),
+    [en.actif, en.phase, en.couverture ? en.couverture.jusqua : 0,
+     en.couverture ? en.couverture.couvert : false],
     tout.map(function(e){ return cle(e) + ':' + e.ts + ':' + (e.valeur === undefined ? '' : e.valeur); }).sort(),
     [ui.ligne, ui.mode, ui.ajout, ui.horsProto, ui.surv, ui.survMode,
      ui.erreur, ui.erreurTemp, ui.form.sujet]
@@ -1609,6 +1798,7 @@ function rendu(force){
 
   if (force || signature !== derniereSignature){
     derniereSignature = signature;
+    renduNuit(en, etats, t);
     renduSurveillance(etatsSv, t);
     renduTemperature(temps, prises, t);
     renduMaintenant(etats, prises, t);
@@ -1622,8 +1812,11 @@ function rendu(force){
 function tic(t){
   var cibles = document.querySelectorAll('[data-cible]');
   for (var i = 0; i < cibles.length; i++){
-    var n = cibles[i], ts = Number(n.dataset.cible);
-    n.textContent = n.dataset.format === 'relatif' ? relatif(ts, t) : duree(ts - t);
+    var n = cibles[i], ts = Number(n.dataset.cible), f = n.dataset.format;
+    var txt = f === 'relatif' ? relatif(ts, t)
+            : f === 'depuis'  ? duree(t - ts)
+            : duree(ts - t);
+    n.textContent = (n.dataset.prefixe || '') + txt + (n.dataset.suffixe || '');
   }
 }
 
